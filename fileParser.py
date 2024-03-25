@@ -31,27 +31,14 @@ def parsePenaltyLogicFile(filepath):
     
     return penaltyLogicRules
 
-def parseQualitiativeLogicFile(filepath):
+def parseQualitativeLogicFile(filepath):
     qualitiativeLogicRules = []
 
     with open(filepath, 'r') as file:
         for line in file:
             separateParts = line.strip().split('IF')
-            rule = separateParts[0].strip
+            rule = separateParts[0].strip()
             condition = separateParts[1].strip() if len(separateParts) > 1 else ""
             qualitiativeLogicRules.append((rule, condition))
     
     return qualitiativeLogicRules
-
-def generateEncodedObjects(attributes):
-    values = list(attributes.values())
-    combinations = list(itertools.product(*values))
-
-    encodedObjects = []
-    for combination in combinations:
-        encodedObj = ''
-        for attribute, value in zip(attributes.keys(), combination):
-            encodedObj += '1' if value == attributes[attribute][0] else '0'
-        encodedObjects.append(encodedObj)
-    
-    return encodedObjects
