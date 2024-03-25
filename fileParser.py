@@ -5,9 +5,16 @@ def parseAttributesFile(filepath):
 
     with open(filepath, 'r') as attributesFile:
         for line in attributesFile:
-            attribute, valuesString = line.strip().split(':')
-            values = [value.strip() for value in valuesString.split(',')]  
-            attributes[attribute.strip()] = values  
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                attribute, valuesString = line.split(':')
+                values = [value.strip() for value in valuesString.split(',') if value.strip()]
+                if attribute.strip() and values:
+                    attributes[attribute.strip()] = values
+            except ValueError:
+                print(f"Warning: Skipping malformed line: {line}")
 
     return attributes
 
