@@ -44,9 +44,7 @@ def checkFeasibility(encodedObject, constraints, variableMapping, attributes):
     clause = []
 
     for key, _ in variableMapping.items():
-        print("Using key:", key)
         if ":" not in key:
-            print(f"Malformed key in variableMapping: {key}")
             continue  # Skip this iteration if the key format is not correct
         attribute, value = key.split(":")
 
