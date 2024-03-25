@@ -9,8 +9,8 @@ def main():
 
     encodedObjects = generateEncodedObjects(attributes)
     variableMapping = assignAttributesToVariables(attributes)
-    feasibleObjects = applyConstraints(encodedObjects, constraints, attributes)
-    penalties = evaluatePenaltyLogic(feasibleObjects, penaltyLogicRules, variableMapping, attributes)
+    feasibleObjects = applyConstraints(encodedObjects, constraints, variableMapping, attributes)
+    penalties = evaluatePenaltyLogic(feasibleObjects, penaltyLogicRules, attributes)
 
     print("Feasible Objects:", feasibleObjects)
     print("Penalties", penalties)
