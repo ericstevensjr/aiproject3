@@ -1,22 +1,26 @@
 import itertools
 
 def parseAttributesFile(filepath):
-    attributes = {} 
-
-    with open(filepath, 'r') as attributesFile:
-        for line in attributesFile:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                attribute, valuesString = line.split(':')
-                values = [value.strip() for value in valuesString.split(',') if value.strip()]
-                if attribute.strip() and values:
-                    attributes[attribute.strip()] = values
-            except ValueError:
-                print(f"Warning: Skipping malformed line: {line}")
-
+    attributes = {}
+    try:
+        with open(filepath, 'r') as attributesFile:
+            for line in attributesFile:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    attribute, valuesString = line.split(':')
+                    values = [value.strip() for value in valuesString.split(',') if value.strip()]
+                    if attribute.strip() and values:
+                        attributes[attribute.strip()] = values
+                except ValueError:
+                    print(f"Warning: Skipping malformed line: {line}")
+    except FileNotFoundError:
+        print(f"Error: File {filepath} not found.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
     return attributes
+
 
 def parseConstraintsFile(filepath):
     constraints = []
