@@ -73,15 +73,25 @@ def checkFeasibility(encodedObject, constraints, variableMapping, attributes):
 
     return isSolvable
 
-def applyConstraints(encodedObjects, constraints, attributes, variableMapping):
-    feasibleObjects = []
+def applyConstraints(constraints, variableMapping):
+    solver = Glucose4()
 
-    for object in encodedObjects:
-        if checkFeasibility(object, constraints, variableMapping, attributes):
-            feasibleObjects.append(object)
-            
+    for constraint in constraints:
+        clause = []
+        for part in constraint.split('OR'):
+            isNegated = 'NOT' in part
+            part = part.replace('NOT ', '').strip()
+            # Assuming variableMapping maps attribute values to integers
+            if part in variableMapping:
+                var = variableMapping[part]
+                if isNegated:
+                    var = -var
+                clause.append(var)
+        solver.add_clause(clause)
 
-    return feasibleObjects
+    isSolvable = solver.solve()
+    solver.delete()  # Important to free resources
+    return isSolvable
 
 def evaluatePenaltyLogic(feasibleObjects, penaltyLogicRules, attributes):
     penalties = {}
