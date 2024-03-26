@@ -15,31 +15,35 @@ def performFeasibilityChecking(feasibleObjects):
         print("No feasible objects found.")
 
 
-def showTable(feasibleObjects, logicRules, preferenceLogic, map):
+def showTable(feasibleObjects, penaltyLogicRules, preferenceLogic, map, attributes):
+    print(feasibleObjects[:5])
     if preferenceLogic == 'penalty':
-        # Prepare the header
-        headers = ["Encoding"] + [f"Rule {i+1}" for i in range(len(logicRules))] + ["Total Penalty"]
-        header_row = "{:<10} " + " ".join(["{:<10}" for _ in range(len(logicRules))]) + " {:<14}"
-        print(header_row.format(*headers))
+        # Headers
+        headers = ["encoding"] + [condition for condition, _ in penaltyLogicRules] + ["total penalty"]
 
-        # Print separator
-        print("-" * (12 + 11 * len(logicRules) + 15))
+        # Calculate penalties for each object and sort by total penalty
+        penalties_data = []
+        for idx, obj in enumerate(feasibleObjects, 1):
+            penalties = [evaluateCNF(condition, obj, map, attributes) * penalty for condition, penalty in penaltyLogicRules]
+            total_penalty = sum(penalties)
+            penalties_data.append((f"o{idx}", *penalties, total_penalty))
 
-        # Iterate over each feasible object and display the calculated penalties
-        for obj in feasibleObjects:
-            row_data = [obj]
-            totalPenalty = 0
-            for condition, penalty in logicRules:
-                if evaluateCNF(condition, obj, map):
-                    row_data.append(str(penalty))
-                    totalPenalty += penalty
-                else:
-                    row_data.append('0')
-            row_data.append(str(totalPenalty))
-            
-            # Format and print each row
-            row_format = "{:<10} " + " ".join(["{:<10}" for _ in range(len(logicRules))]) + " {:<14}"
-            print(row_format.format(*row_data))
+        # Sort by total penalty, highest first
+        penalties_data.sort(key=lambda x: x[-1], reverse=True)
+
+        # Determine column widths
+        column_widths = [max(len(str(row[i])) for row in [headers] + penalties_data) + 2 for i in range(len(headers))]
+
+        # Print header
+        header_row = "|" + "|".join(header.center(width) for header, width in zip(headers, column_widths)) + "|"
+        print("-" * len(header_row))
+        print(header_row)
+        print("-" * len(header_row))
+
+        # Print rows
+        for row in penalties_data:
+            print("|" + "|".join(str(val).rjust(width) for val, width in zip(row, column_widths)) + "|")
+        print("-" * len(header_row))
 
 
 def performExemplification(feasibleObjects, logicRules, preferenceLogic):
@@ -67,7 +71,7 @@ def reasoningTasksMenu(preference_logic, feasibleObjects, attributes, map, penal
             performFeasibilityChecking(feasibleObjects)
         elif task_choice == '3':
             logicRules = penaltyLogicRules if preference_logic == 'penalty' else qualitativeLogicRules
-            showTable(feasibleObjects, logicRules, preference_logic, map)
+            showTable(feasibleObjects, logicRules, preference_logic, map, attributes)
         elif task_choice == '4':
             logicRules = penaltyLogicRules if preference_logic == 'penalty' else qualitativeLogicRules
             performExemplification(feasibleObjects, logicRules, preference_logic)
@@ -93,11 +97,14 @@ def userInterface():
 
         combinations = generateCombinations(attributes)
         encodedObjects = encodeCombinations(combinations, attributes)
+        print("Encoded Objects (sample):", encodedObjects[:5])
+        print("Length of an Encoded Object:", len(encodedObjects[0]) if encodedObjects else "N/A")
         map, _ = mapAttributesToIntegers(attributes)
         print("Attribute to Integer Mapping: ", map)
         clauses = convertConstraintsToClauses(constraints, attributes, map)
         print("Constraints as Clauses: ", clauses)
         feasibleObjects = [obj for obj in encodedObjects if checkFeasibility(clauses)]
+        print("Feasible Objects:", feasibleObjects[:5])
 
         preferenceChoice = input("\nChoose the preference logic to use:\n1. Penalty Logic\n2. Qualitative Choice Logic\n3. Exit\nYour Choice: ")
         if preferenceChoice in ['1', '2']:

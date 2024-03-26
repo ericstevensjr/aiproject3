@@ -37,6 +37,7 @@ def mapAttributesToIntegers(attributes):
             reverseMapping[counter] = f"{attribute}:{value}"
             counter += 1
 
+    print(mapping)
     return mapping, reverseMapping
 
 
@@ -77,40 +78,51 @@ def checkFeasibility(clauses):
     return isFeasible
 
 
-def evaluateCNF(cnfCondition, encodedObject, mapping):
+def evaluateCNF(cnfCondition, encodedObject, mapping, attributes):
     # Split the CNF condition into clauses (AND-separated)
     clauses = cnfCondition.split(' AND ')
     for clause in clauses:
+        # Initialize clauseSatisfied to False at the start of each clause evaluation
+        clauseSatisfied = False
+
         # A clause is satisfied if at least one literal is true
         literals = clause.split(' OR ')
-        clauseSatisfied = False
         for literal in literals:
             negated = 'NOT' in literal
             attrValue = literal.replace('NOT ', '') if negated else literal
-            if attrValue in mapping:
-                # Check if the literal's condition is met by the encoded object
-                index = mapping[attrValue] - 1  # Adjusting for zero-based indexing
-                expectedValue = '0' if negated else '1'
-                if encodedObject[index] == expectedValue:
-                    clauseSatisfied = True
-                    break
+            for attribute, values in attributes.items():
+                for value in values:
+                    key = f"{attribute}:{value}"
+                    if key in mapping:
+                        index = mapping[key] - 1  # Adjust to 0-based index
+                        expectedValue = '0' if negated else '1'
+                        # Ensure index is within bounds
+                        if 0 <= index < len(encodedObject) and encodedObject[index] == expectedValue:
+                            clauseSatisfied = True
+                            break
+
+            if clauseSatisfied:
+                break
+
         if not clauseSatisfied:
             # If any clause is not satisfied, the CNF condition is not met
             return False
     return True
 
 
-def calculatePenalties(feasbileObjects, penaltyLogicRules, map):
+
+def calculatePenalties(feasibleObjects, penaltyLogicRules, map):
     objectPenalties = {}
 
-    for encodedObject in feasbileObjects:
+    for encodedObject in feasibleObjects[:5]:  # Check a few examples
         totalPenalty = 0
-
         for condition, penalty in penaltyLogicRules:
-            if evaluateCNF(condition, encodedObject, map):
+            result = evaluateCNF(condition, encodedObject, map)
+            print(f"Condition: {condition}, Result: {result}, Penalty: {penalty}")  # Debug print
+            if result:
                 totalPenalty += penalty
-        objectPenalties[encodedObject] = totalPenalty
-    
+        print(f"Object: {encodedObject}, Total Penalty: {totalPenalty}")  # Final penalty for an object
+
     return objectPenalties
 
 
