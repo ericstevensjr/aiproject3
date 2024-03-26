@@ -24,13 +24,18 @@ def parseAttributesFile(filepath):
 
 def parseConstraintsFile(filepath):
     constraints = []
-
-    with open(filepath, 'r') as constraintsFile:
-        for line in constraintsFile:
-            constraint = line.strip()
-            constraints.append(constraint)
-
+    try:
+        with open(filepath, 'r') as constraintsFile:
+            for line in constraintsFile:
+                line = line.strip()
+                if line:  # Ensuring the line is not empty
+                    constraints.append(line)
+    except FileNotFoundError:
+        print(f"Error: File {filepath} not found.")
+    except Exception as e:
+        print(f"An unexpected error occurred while parsing constraints: {e}")
     return constraints
+
 
 def parsePenaltyLogicFile(filepath):
     penaltyLogicRules = []
