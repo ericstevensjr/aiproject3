@@ -42,7 +42,7 @@ def convertConstraintsToClauses(constraints, map):
 
     for constraint in constraints:
         clause = []
-        
+
         for literal in constraint:
             if "NOT" in literal:
                 attributeValue = literal.replace("NOT ", "").strip()
@@ -65,4 +65,36 @@ def checkFeasibility(clauses):
     return isSatisfiable
 
 
-def 
+def evaluateCNF(condition, encodedObject, map):
+    clauses = condition.split('AND')
+
+    for clause in clauses:
+        clause = clause.strip()
+        literals = clause.split('OR')
+        clauseSatisfied = False
+
+        for literal in literals:
+            literal = literal.strip()
+            attribute, value = literal.split(':')
+            
+            if encodedObject[map[attribute + ':' + value]] == 1:
+                clauseSatisfied = True
+                break
+        if not clauseSatisfied:
+            return False
+        
+    return True
+
+
+def calculatePenalties(feasbileObjects, penaltyLogicRules, map):
+    objectPenalties = {}
+
+    for encodedObject in feasbileObjects:
+        totalPenalty = 0
+
+        for condition, penalty in penaltyLogicRules:
+            if evaluateCNF(condition, encodedObject, map):
+                totalPenalty += penalty
+        objectPenalties[encodedObject] = totalPenalty
+    
+    return objectPenalties
