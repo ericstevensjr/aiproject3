@@ -17,20 +17,29 @@ def performFeasibilityChecking(feasibleObjects):
 
 def showTable(feasibleObjects, logicRules, preferenceLogic, map):
     if preferenceLogic == 'penalty':
+        # Prepare the header
         headers = ["Encoding"] + [f"Rule {i+1}" for i in range(len(logicRules))] + ["Total Penalty"]
-        row_format ="{:<10}" + "{:>12}" * (len(headers) - 1)
-        print(row_format.format(*headers))
-        
+        header_row = "{:<10} " + " ".join(["{:<10}" for _ in range(len(logicRules))]) + " {:<14}"
+        print(header_row.format(*headers))
+
+        # Print separator
+        print("-" * (12 + 11 * len(logicRules) + 15))
+
+        # Iterate over each feasible object and display the calculated penalties
         for obj in feasibleObjects:
-            penalties = []
+            row_data = [obj]
             totalPenalty = 0
             for condition, penalty in logicRules:
                 if evaluateCNF(condition, obj, map):
-                    penalties.append(penalty)
+                    row_data.append(str(penalty))
                     totalPenalty += penalty
                 else:
-                    penalties.append(0)
-            print(row_format.format(obj, *penalties, totalPenalty))
+                    row_data.append('0')
+            row_data.append(str(totalPenalty))
+            
+            # Format and print each row
+            row_format = "{:<10} " + " ".join(["{:<10}" for _ in range(len(logicRules))]) + " {:<14}"
+            print(row_format.format(*row_data))
 
 
 def performExemplification(feasibleObjects, logicRules, preferenceLogic):
@@ -58,7 +67,7 @@ def reasoningTasksMenu(preference_logic, feasibleObjects, attributes, map, penal
             performFeasibilityChecking(feasibleObjects)
         elif task_choice == '3':
             logicRules = penaltyLogicRules if preference_logic == 'penalty' else qualitativeLogicRules
-            showTable(feasibleObjects, logicRules, preference_logic)
+            showTable(feasibleObjects, logicRules, preference_logic, map)
         elif task_choice == '4':
             logicRules = penaltyLogicRules if preference_logic == 'penalty' else qualitativeLogicRules
             performExemplification(feasibleObjects, logicRules, preference_logic)
@@ -78,12 +87,16 @@ def userInterface():
         constraintsFile = input("Enter Hard Constraints File Name: ")
 
         attributes = parseAttributesFile(attributesFile)
+        print("Parsed Attributes: ", attributes)
         constraints = parseConstraintFile(constraintsFile)
+        print("Parsed Constraints: ", constraints)
 
         combinations = generateCombinations(attributes)
         encodedObjects = encodeCombinations(combinations, attributes)
         map, _ = mapAttributesToIntegers(attributes)
-        clauses = convertConstraintsToClauses(constraints, map)
+        print("Attribute to Integer Mapping: ", map)
+        clauses = convertConstraintsToClauses(constraints, attributes, map)
+        print("Constraints as Clauses: ", clauses)
         feasibleObjects = [obj for obj in encodedObjects if checkFeasibility(clauses)]
 
         preferenceChoice = input("\nChoose the preference logic to use:\n1. Penalty Logic\n2. Qualitative Choice Logic\n3. Exit\nYour Choice: ")

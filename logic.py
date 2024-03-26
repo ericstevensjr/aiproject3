@@ -40,27 +40,33 @@ def mapAttributesToIntegers(attributes):
     return mapping, reverseMapping
 
 
-def convertConstraintsToClauses(constraints, mapping):
+def convertConstraintsToClauses(constraints, attributes, mapping):
     clauses = []
     for constraint in constraints:
         clause = []
         for literal in constraint:
             isNegated = 'NOT ' in literal
-            if isNegated:
-                attrValue = literal.replace('NOT ', '').strip()
-            else:
-                attrValue = literal.strip()
-            mappedValue = mapping.get(attrValue)
-            if mappedValue is None:
-                print(f"Warning: {attrValue} not found in mapping.")
-                continue
-            if isNegated:
-                clause.append(-mappedValue)
-            else:
-                clause.append(mappedValue)
-        clauses.append(clause)
-    return clauses
+            value = literal.replace('NOT ', '').strip() if isNegated else literal.strip()
 
+            # Find the attribute that this value belongs to
+            found = False
+            for attribute, values in attributes.items():
+                if value in values:
+                    # Correctly construct the key for the mapping
+                    key = f"{attribute}:{value}"
+                    if isNegated:
+                        clause.append(-mapping[key])
+                    else:
+                        clause.append(mapping[key])
+                    found = True
+                    break
+            
+            if not found:
+                print(f"Warning: {value} not found in mapping.")
+                
+        if clause:  # Ensure we don't add empty clauses
+            clauses.append(clause)
+    return clauses
 
 def checkFeasibility(clauses):
     solver = Glucose4()
