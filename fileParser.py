@@ -105,4 +105,4 @@ def parseQualitativeLogicFile(filepath):
     
     return qualitativeLogicRules
 
-    
+
