@@ -42,20 +42,33 @@ def parsePenaltyLogicFile(filepath):
     try:
         with open(filepath, 'r') as file:
             for line in file:
-                condition, penalty = line.strip().split(',')
-                penaltyLogicRules.append((condition.strip(), int(penalty.strip())))
+                try:
+                    condition, penalty = line.strip().split(',')
+                    penalty = int(penalty.strip())  # Ensuring penalty is an integer
+                    penaltyLogicRules.append((condition.strip(), penalty))
+                except ValueError as ve:
+                    print(f"Warning: Skipping malformed penalty logic rule: {line}. Error: {ve}")
     except FileNotFoundError:
-        print(f"File not found: {filepath}. Please make sure the file exists and the path is correct.")
+        print(f"Error: File {filepath} not found.")
+    except Exception as e:
+        print(f"An unexpected error occurred while parsing penalty logic rules: {e}")
     return penaltyLogicRules
 
-def parseQualitativeLogicFile(filepath):
-    qualitiativeLogicRules = []
 
-    with open(filepath, 'r') as file:
-        for line in file:
-            separateParts = line.strip().split('IF')
-            rule = separateParts[0].strip()
-            condition = separateParts[1].strip() if len(separateParts) > 1 else ""
-            qualitiativeLogicRules.append((rule, condition))
-    
-    return qualitiativeLogicRules
+def parseQualitativeLogicFile(filepath):
+    qualitativeLogicRules = []
+    try:
+        with open(filepath, 'r') as file:
+            for line in file:
+                try:
+                    parts = line.strip().split('IF')
+                    rule = parts[0].strip()
+                    condition = parts[1].strip() if len(parts) > 1 else ""
+                    qualitativeLogicRules.append((rule, condition))
+                except IndexError:
+                    print(f"Warning: Skipping malformed qualitative choice logic rule: {line}")
+    except FileNotFoundError:
+        print(f"Error: File {filepath} not found.")
+    except Exception as e:
+        print(f"An unexpected error occurred while parsing qualitative choice logic rules: {e}")
+    return qualitativeLogicRules
