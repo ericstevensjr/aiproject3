@@ -22,3 +22,32 @@ def encodeCombinations(combinations, attributes):
 
     return encodedObjects
 
+def mapAttributesToIntegers(attributes):
+    map = {}
+    reversedMap = {}
+    counter = 1
+
+    for attribute, values in attributes.items():
+        for value in values:
+            map[f"{attribute}:{value}"] = counter
+            reversedMap[counter] = f"{attribute}:{value}"
+            counter += 1
+
+    return map, reversedMap
+
+
+def convertConstraintsToClauses(constraints, map):
+    clauses = []
+
+    for constraint in constraints:
+        clause = []
+        
+        for literal in constraints:
+            if "NOT" in literal:
+                attributeValue = literal.repalce("NOT ", "").strip()
+                clause.append(-map[attributeValue])
+            else:
+                clause.append(map[literal])
+        clauses.append(clause)
+
+    return clauses
