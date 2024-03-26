@@ -45,15 +45,20 @@ def convertConstraintsToClauses(constraints, mapping):
     for constraint in constraints:
         clause = []
         for literal in constraint:
-            # Handling negation and mapping to integers
-            if 'NOT ' in literal:
+            isNegated = 'NOT ' in literal
+            if isNegated:
                 attrValue = literal.replace('NOT ', '').strip()
-                # Negate the integer for negated literals
-                clause.append(-mapping[attrValue])
             else:
-                clause.append(mapping[literal.strip()])
+                attrValue = literal.strip()
+            mappedValue = mapping.get(attrValue)
+            if mappedValue is None:
+                print(f"Warning: {attrValue} not found in mapping.")
+                continue
+            if isNegated:
+                clause.append(-mappedValue)
+            else:
+                clause.append(mappedValue)
         clauses.append(clause)
-    
     return clauses
 
 

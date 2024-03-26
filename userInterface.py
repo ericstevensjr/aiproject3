@@ -15,8 +15,22 @@ def performFeasibilityChecking(feasibleObjects):
         print("No feasible objects found.")
 
 
-def showTable(feasibleObjects, logicRules, preferenceLogic):
-    print("Table showing for each feasible object the penalty or satisfaction degree values across all preference rules is under construction.")
+def showTable(feasibleObjects, logicRules, preferenceLogic, map):
+    if preferenceLogic == 'penalty':
+        headers = ["Encoding"] + [f"Rule {i+1}" for i in range(len(logicRules))] + ["Total Penalty"]
+        row_format ="{:<10}" + "{:>12}" * (len(headers) - 1)
+        print(row_format.format(*headers))
+        
+        for obj in feasibleObjects:
+            penalties = []
+            totalPenalty = 0
+            for condition, penalty in logicRules:
+                if evaluateCNF(condition, obj, map):
+                    penalties.append(penalty)
+                    totalPenalty += penalty
+                else:
+                    penalties.append(0)
+            print(row_format.format(obj, *penalties, totalPenalty))
 
 
 def performExemplification(feasibleObjects, logicRules, preferenceLogic):
@@ -71,8 +85,6 @@ def userInterface():
         map, _ = mapAttributesToIntegers(attributes)
         clauses = convertConstraintsToClauses(constraints, map)
         feasibleObjects = [obj for obj in encodedObjects if checkFeasibility(clauses)]
-
-        choice = input("\nChoose the preference logic to use:\n1. Penalty Logic\n2. Qualitative Choice Logic\n3. Exit\nYour Choice: ")
 
         preferenceChoice = input("\nChoose the preference logic to use:\n1. Penalty Logic\n2. Qualitative Choice Logic\n3. Exit\nYour Choice: ")
         if preferenceChoice in ['1', '2']:
