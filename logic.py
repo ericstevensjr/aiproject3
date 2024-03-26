@@ -2,21 +2,22 @@ import itertools
 from pysat.solvers import Glucose4
 
 def generateCombinations(attributes):
+    # Extracting attribute values and generating all possible combinations
     attributeValues = [values for values in attributes.values()]
     allCombinations = itertools.product(*attributeValues)
-    combinationsList = list(map(list, allCombinations))
-
-    return combinationsList
+    
+    return list(allCombinations)
 
 
 def encodeCombinations(combinations, attributes):
+    # Mapping each attribute value to its binary representation
     valuePositions = {attribute: {value: idx for idx, value in enumerate(values)} for attribute, values in attributes.items()}
     encodedObjects = []
 
     for combination in combinations:
         encodedObject = ''
-
         for attribute, value in zip(attributes.keys(), combination):
+            # Encoding the first value as '1' and the second as '0'
             bit = '1' if valuePositions[attribute][value] == 0 else '0'
             encodedObject += bit
         encodedObjects.append(encodedObject)
