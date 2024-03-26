@@ -1,4 +1,5 @@
 import itertools
+from pysat.solvers import Glucose4
 
 def generateCombinations(attributes):
     attributeValues = [values for values in attributes.values()]
@@ -51,3 +52,14 @@ def convertConstraintsToClauses(constraints, map):
         clauses.append(clause)
 
     return clauses
+
+
+def checkFeasibility(clauses):
+    solver = Glucose4()
+
+    for clause in clauses:
+        solver.add_clause(clause)
+    isSatisfiable = solver.solve()
+    solver.delete()
+
+    return isSatisfiable
