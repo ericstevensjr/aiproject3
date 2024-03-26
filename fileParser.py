@@ -81,4 +81,28 @@ def parsePenaltyLogicFile(filepath):
     return penaltyLogicRules
             
 
+def parseQualitativeLogicFile(filepath):
+    qualitativeLogicRules = []
+
+    try:
+        with open(filepath, 'r') as file:
+            for line in file:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split('IF')
+                condition = parts[1].strip() if len(parts) > 1 else ""
+                preferences = parts[0].strip()
+                qualitativeLogicRules.append((preferences, condition))
+    
+    except FileNotFoundError:
+        print(f"Error: File {filepath} not found.")
+        return []
+    
+    except Exception as e:
+        print(f"An unexpected error occurred while parsing qualitative choice logic rules: {e}")
+        return []
+    
+    return qualitativeLogicRules
+
     
