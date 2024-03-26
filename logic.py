@@ -25,17 +25,18 @@ def encodeCombinations(combinations, attributes):
     return encodedObjects
 
 def mapAttributesToIntegers(attributes):
-    map = {}
-    reversedMap = {}
-    counter = 1
+    mapping = {}
+    reverseMapping = {}
+    counter = 1  # Start counter at 1 since PySAT uses positive and negative integers
 
     for attribute, values in attributes.items():
         for value in values:
-            map[f"{attribute}:{value}"] = counter
-            reversedMap[counter] = f"{attribute}:{value}"
+            # Mapping each attribute value to a unique integer
+            mapping[f"{attribute}:{value}"] = counter
+            reverseMapping[counter] = f"{attribute}:{value}"
             counter += 1
 
-    return map, reversedMap
+    return mapping, reverseMapping
 
 
 def convertConstraintsToClauses(constraints, mapping):
@@ -43,28 +44,25 @@ def convertConstraintsToClauses(constraints, mapping):
     for constraint in constraints:
         clause = []
         for literal in constraint:
-            # Assume literals are now correctly prefixed with attribute names, e.g., "drink:wine"
-            negated = 'NOT ' in literal
-            cleaned_literal = literal.replace("NOT ", "").strip()
-            
-            if cleaned_literal in mapping:  # Direct lookup if literal is correctly formed
-                mappedValue = mapping[cleaned_literal]
-                clause.append(-mappedValue if negated else mappedValue)
+            # Handling negation and mapping to integers
+            if 'NOT ' in literal:
+                attrValue = literal.replace('NOT ', '').strip()
+                # Negate the integer for negated literals
+                clause.append(-mapping[attrValue])
             else:
-                print(f"Warning: '{cleaned_literal}' not found in mapping.")
+                clause.append(mapping[literal.strip()])
         clauses.append(clause)
+    
     return clauses
-
 
 def checkFeasibility(clauses):
     solver = Glucose4()
-
     for clause in clauses:
         solver.add_clause(clause)
-    isSatisfiable = solver.solve()
-    solver.delete()
+    isFeasible = solver.solve()
+    solver.delete()  # Clean up the solver instance
+    return isFeasible
 
-    return isSatisfiable
 
 
 def evaluateCNF(condition, encodedObject, encodingMap):
