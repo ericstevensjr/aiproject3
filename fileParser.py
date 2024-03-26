@@ -17,10 +17,68 @@ def parseAttributesFile(filepath):
                     print(f"Warning: Attribute '{attribute}' does not have exactly two values, skipping: {line}")
                     continue
                 attributes[attribute.strip()] = values
+    
     except FileNotFoundError:
         print(f"Error: File {filepath} not found.")
         return {}
+    
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return {}
+    
     return attributes
+
+
+def parseConstraintFile(filepath):
+    constraints = []
+
+    try:
+        with open(filepath, 'r') as file:
+            for line in file:
+                line = line.strip()
+                if not line:
+                    continue
+                literals = [literal.strip() for literal in line.split('OR')]
+                constraints.append(literals)
+
+    except FileNotFoundError:
+        print(f"Error: File {filepath} not found.")
+        return []
+    
+    except Exception as e:
+        print(f"An unexpected error occurred while parsing constraints: {e}")
+        return []
+    
+    return constraints
+
+
+def parsePenaltyLogicFile(filepath):
+    penaltyLogicRules = []
+
+    try:
+        with open(filepath, 'r') as file:
+            for line in file:
+                line = line.strip()
+                if not line:
+                    continue
+                
+                try:
+                    condition, penalty = line.split(',')
+                    penalty = int(penalty.strip())
+                    penaltyLogicRules.append((condition.strip(), penalty))
+                
+                except ValueError:
+                    print(f"Warning: Skipping malformed penalty logic rule: {line}")
+
+    except FileNotFoundError:
+        print(f"Error: File {filepath} not found.")
+        return []
+    
+    except Exception as e:
+        print(f"An unexpected error occurred while parsing penalty logic rules: {e}")
+        return []
+    
+    return penaltyLogicRules
+            
+
+    
