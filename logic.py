@@ -65,21 +65,31 @@ def checkFeasibility(clauses):
     return isSatisfiable
 
 
-def evaluateCNF(condition, encodedObject, map):
-    clauses = condition.split('AND')
+def evaluateCNF(condition, encodedObject, encodingMap):
+    clauses = condition.split(' AND ')
 
     for clause in clauses:
         clause = clause.strip()
-        literals = clause.split('OR')
+        literals = clause.split(' OR ')
         clauseSatisfied = False
 
         for literal in literals:
+            negated = 'NOT' in literal
+            if negated:
+                attributeValue = literal.replace("NOT ", "").strip()
+            else:
+                attributeValue = literal.strip()
             literal = literal.strip()
             attribute, value = literal.split(':')
             
-            if encodedObject[map[attribute + ':' + value]] == 1:
-                clauseSatisfied = True
-                break
+            if attributeValue in encodingMap:
+                index = encodingMap[attributeValue]
+                expectedValue = '0' if negated else '1'
+
+                if encodedObject[index] == expectedValue:
+                    clauseSatisfied = True
+                    break
+
         if not clauseSatisfied:
             return False
         
@@ -98,3 +108,56 @@ def calculatePenalties(feasbileObjects, penaltyLogicRules, map):
         objectPenalties[encodedObject] = totalPenalty
     
     return objectPenalties
+
+
+def createEncodingMapping(attributes):
+    encodingMap = {}
+
+    for idx, (attribute, values) in enumerate(attributes.items()):
+        for value in values:
+            encodingMap[f"{attribute}:{value}"] = idx
+        
+    return encodingMap
+
+
+def compareObjectsUsingQCL(object1, object2, qualitativeLogicRules, map):
+    for preferences, condition in qualitativeLogicRules:
+        if condition and (not evaluateCNF(condition, object1, map) or not evaluateCNF(condition, object2, map)):
+            continue
+
+        preferenceResult = evaluatePreferences(object1, object2, preferences, map)
+
+        if preferenceResult != "incomparable":
+            return preferenceResult
+        
+    return "incomparable"
+
+
+def evaluatePreferences(object1, object2, preferences, map):
+    for preference in preferences:
+        attribute1, value1, attribute2, value2 = parsePreference(preference)
+        position1 = map[f"{attribute1}:{value1}"]
+        position2 = map[f"{attribute2}:{value2}"]
+
+        bit1 = object1[position1] == '1'
+        bit2 = object2[position2] == '1'
+
+        if bit1 and not bit2:
+            return "object1 preferred over object2"
+        elif not bit1 and bit2:
+            return "object2 preferred over object1"
+
+    return "incomparable"
+
+def parsePreference(preference):
+    parts = preference.split('BT')
+
+    if len(parts) != 2:
+        raise ValueError(f"Invalid preference format: {preference}")
+    
+    attributeValuePair1 = parts[0].strip()
+    attributeValuePair2 = parts[1].strip()
+    attribute1, value1 = attributeValuePair1.split(':')
+    attribute2, value2 = attributeValuePair2.split(':')
+
+    return attribute1.strip(), value1.strip(), attribute2.strip(), value2.strip()
