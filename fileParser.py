@@ -30,12 +30,13 @@ def parseConstraintsFile(filepath):
 
 def parsePenaltyLogicFile(filepath):
     penaltyLogicRules = []
-
-    with open(filepath, 'r') as file:
-        for line in file:
-            condition, penalty = line.strip().split(',')
-            penaltyLogicRules.append((condition.strip(), int(penalty.strip())))
-    
+    try:
+        with open(filepath, 'r') as file:
+            for line in file:
+                condition, penalty = line.strip().split(',')
+                penaltyLogicRules.append((condition.strip(), int(penalty.strip())))
+    except FileNotFoundError:
+        print(f"File not found: {filepath}. Please make sure the file exists and the path is correct.")
     return penaltyLogicRules
 
 def parseQualitativeLogicFile(filepath):

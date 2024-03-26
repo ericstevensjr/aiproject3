@@ -22,7 +22,6 @@ def assignAttributesToVariables(attributes):
             key = f"{attribute}:{value}"
             variableMapping[key] = counter
             counter += 1
-    print("Final variableMapping:", variableMapping)  # Diagnostic print
     return variableMapping
 
 def constraintPySAT(constraint, variableMapping):
@@ -71,11 +70,6 @@ def checkFeasibility(encodedObject, constraints, variableMapping, attributes):
         print(f"Checking object: {encodedObject}, with clauses: {clause}, and assumptions: {objectLiterals}")
 
     isSolvable = solver.solve(assumptions=objectLiterals)
-    # DELETE LATER
-    print(f"Checking object: {encodedObject}, with clauses: {clause}, and assumptions: {objectLiterals}")
-    solver.delete()
-    # DELETE LATER
-    print(f"Object {encodedObject}, Clauses: {clause}, Assumptions: {objectLiterals}, Feasible: {isSolvable}")
 
     return isSolvable
 
@@ -96,7 +90,6 @@ def evaluatePenaltyLogic(feasibleObjects, penaltyLogicRules, attributes):
         for condition, penalty in penaltyLogicRules:
             # Debugging print to check condition evaluation and penalty application
             isConditionMet = interpretAndCheckCondition(obj, condition, attributes)
-            print(f"Object {obj}: Condition '{condition}' met: {isConditionMet}")
             if isConditionMet:
                 totalPenalty += penalty
         penalties[obj] = totalPenalty
@@ -177,14 +170,21 @@ def evaluateOrCondition(cond, encodedObject, attributes):
         return encodedObject[attr_index] == expected_value
     return False
 
-def evaluateCondition(cond, encodedObject, attributes):
-    # This function evaluates simple conditions without OR
-    attribute, value = splitCondition(cond, attributes)
-    if attribute in attributes and value in attributes[attribute]:
-        attr_index = list(attributes.keys()).index(attribute)
-        expected_value = '1' if attributes[attribute][0] == value else '0'
-        return encodedObject[attr_index] == expected_value
-    return False
+def evaluateCondition(encodedObject, condition, attributes):
+    attribute_order = list(attributes.keys())
+    condition_parts = condition.split(' AND ')
+    for part in condition_parts:
+        if ' OR ' in part:
+            # Split the part on 'OR' and check if any subpart is true
+            if not any(subpart.strip() in encodedObject for subpart in part.split('OR')):
+                return False
+        else:
+            attribute, value = part.split(':')
+            index = attribute_order.index(attribute)
+            expected = '1' if attributes[attribute][0] == value else '0'
+            if encodedObject[index] != expected:
+                return False
+    return True
 
 def splitCondition(cond, attributes):
     # Helper function to extract attribute and value from a condition string
