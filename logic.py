@@ -43,9 +43,9 @@ def convertConstraintsToClauses(constraints, map):
     for constraint in constraints:
         clause = []
         
-        for literal in constraints:
+        for literal in constraint:
             if "NOT" in literal:
-                attributeValue = literal.repalce("NOT ", "").strip()
+                attributeValue = literal.replace("NOT ", "").strip()
                 clause.append(-map[attributeValue])
             else:
                 clause.append(map[literal])
@@ -63,3 +63,6 @@ def checkFeasibility(clauses):
     solver.delete()
 
     return isSatisfiable
+
+
+def 
