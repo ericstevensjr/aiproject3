@@ -37,20 +37,21 @@ def mapAttributesToIntegers(attributes):
     return map, reversedMap
 
 
-def convertConstraintsToClauses(constraints, map):
+def convertConstraintsToClauses(constraints, mapping):
     clauses = []
-
     for constraint in constraints:
         clause = []
-
         for literal in constraint:
-            if "NOT" in literal:
-                attributeValue = literal.replace("NOT ", "").strip()
-                clause.append(-map[attributeValue])
+            # Assume literals are now correctly prefixed with attribute names, e.g., "drink:wine"
+            negated = 'NOT ' in literal
+            cleaned_literal = literal.replace("NOT ", "").strip()
+            
+            if cleaned_literal in mapping:  # Direct lookup if literal is correctly formed
+                mappedValue = mapping[cleaned_literal]
+                clause.append(-mappedValue if negated else mappedValue)
             else:
-                clause.append(map[literal])
+                print(f"Warning: '{cleaned_literal}' not found in mapping.")
         clauses.append(clause)
-
     return clauses
 
 

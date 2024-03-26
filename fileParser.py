@@ -9,7 +9,7 @@ def parseAttributesFile(filepath):
                     continue
                 parts = line.split(":")
                 if len(parts) != 2:
-                    print(f"Warning: Line {lineNumber} is malfromed, skipping: {line}")
+                    print(f"Warning: Line {lineNumber} is malformed, skipping: {line}")
                     continue
                 attribute, valuesString = parts
                 values = [value.strip() for value in valuesString.split(',') if value.strip()]
@@ -38,6 +38,7 @@ def parseConstraintFile(filepath):
                 line = line.strip()
                 if not line:
                     continue
+                # Splitting each line on 'OR' to extract individual literals
                 literals = [literal.strip() for literal in line.split('OR')]
                 constraints.append(literals)
 
@@ -79,7 +80,7 @@ def parsePenaltyLogicFile(filepath):
         return []
     
     return penaltyLogicRules
-            
+
 
 def parseQualitativeLogicFile(filepath):
     qualitativeLogicRules = []
@@ -104,5 +105,3 @@ def parseQualitativeLogicFile(filepath):
         return []
     
     return qualitativeLogicRules
-
-
