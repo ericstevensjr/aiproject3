@@ -14,7 +14,7 @@ def get_user_choice(prompt, valid_choices):
 
 def perform_qualitative_choice_logic_operations(attributes, constraints, qualitative_logic_rules):
     encodedObjects = generateEncodedObjects(attributes)
-    variableMapping = assignAttributesToVariables(attributes)
+    variableMapping = mappingAttributesToVariables(attributes)
     feasibleObjects = applyConstraints(encodedObjects, constraints, variableMapping, attributes)
 
     while True:
@@ -46,9 +46,9 @@ def perform_qualitative_choice_logic_operations(attributes, constraints, qualita
 
 def perform_penalty_logic_operations(attributes, constraints, penalty_logic_rules):
     encodedObjects = generateEncodedObjects(attributes)
-    variableMapping = assignAttributesToVariables(attributes)
+    variableMapping = mappingAttributesToVariables(attributes)
     feasibleObjects = applyConstraints(encodedObjects, constraints, variableMapping, attributes)
-    penalties = evaluatePenaltyLogic(feasibleObjects, penalty_logic_rules, attributes)
+    penalties = evaluatePenaltyLogic(feasibleObjects, penalty_logic_rules, attributes, variableMapping)
 
     while True:
         print("\nChoose the reasoning task to perform:")

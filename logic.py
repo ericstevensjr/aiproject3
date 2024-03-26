@@ -2,137 +2,120 @@ from pysat.solvers import Glucose4
 import itertools
 
 def generateEncodedObjects(attributes):
-    values = list(attributes.values())
-    combinations = list(itertools.product(*values))
+    # Generate all possible combinations of attribute values
+    values_combinations = list(itertools.product(*attributes.values()))
+    encoded_objects = []
 
-    encodedObjects = []
-    for combination in combinations:
-        encodedObj = ''
-        for attribute, value in zip(attributes.keys(), combination):
-            encodedObj += '1' if value == attributes[attribute][0] else '0'
-        encodedObjects.append(encodedObj)
+    for combination in values_combinations:
+        encoded = ''.join('1' if value == attributes[attribute][0] else '0' 
+                          for attribute, value in zip(attributes.keys(), combination))
+        encoded_objects.append(encoded)
     
-    return encodedObjects
+    return encoded_objects
 
-def assignAttributesToVariables(attributes):
+def mappingAttributesToVariables(attributes):
     variableMapping = {}
+    reverse_mapping = {}  # Optional: For easy lookup in interpretations
     counter = 1
+
     for attribute, values in attributes.items():
         for value in values:
             key = f"{attribute}:{value}"
             variableMapping[key] = counter
+            reverse_mapping[counter] = key  # Reverse mapping
             counter += 1
-    return variableMapping
 
-def constraintPySAT(constraint, variableMapping):
-    clause = []
-    for part in constraint.split('OR'):
-        isNegated = 'NOT' in part
-        part = part.replace('NOT ', '').strip()
-        for key, var in variableMapping.items():
-            if part in key:
-                if isNegated:
-                    var = -var
-                clause.append(var)
-                break
-    return clause
+    return variableMapping, reverse_mapping  # Return both mappings if reverse mapping is needed
 
-def checkFeasibility(encodedObject, constraints, variableMapping, attributes):
-    solver = Glucose4()
-    objectLiterals = []
-    clause = []
-
-    for key, _ in variableMapping.items():
-        if ":" not in key:
-            continue  # Skip this iteration if the key format is not correct
-        attribute, value = key.split(":")
-
-        for constraint in constraints:
-            clause = []
-            parts = constraint.split('OR')
-            for part in parts:
-                part = part.strip()
-                negated = 'NOT ' in part
-                part_cleaned = part.replace('NOT ', '').strip()
-                pass
-
-                for attribute, values in attributes.items():  # Ensure values are iterable
-                    if part_cleaned in values:  # Correctly check if part_cleaned is one of the attribute's values
-                        key = f"{attribute}:{part_cleaned}"
-                        variable = variableMapping.get(key, None)
-                        if variable is not None:
-                            clause.append(-variable if negated else variable)
-                            break
-            if clause:
-                solver.add_clause(clause)
-                pass
-    
-        print(f"Checking object: {encodedObject}, with clauses: {clause}, and assumptions: {objectLiterals}")
-
-    isSolvable = solver.solve(assumptions=objectLiterals)
-
-    return isSolvable
-
-def applyConstraints(constraints, variableMapping):
+def applyConstraints(encodedObjects, constraints, variableMapping, attributes):
     solver = Glucose4()
 
     for constraint in constraints:
         clause = []
-        for part in constraint.split('OR'):
-            isNegated = 'NOT' in part
-            part = part.replace('NOT ', '').strip()
-            # Assuming variableMapping maps attribute values to integers
-            if part in variableMapping:
-                var = variableMapping[part]
-                if isNegated:
-                    var = -var
-                clause.append(var)
-        solver.add_clause(clause)
+        for literal in constraint.replace('NOT ', '-').split('OR'):
+            # Clean up and identify if literal is negated
+            is_negated, *literal_parts = literal.strip().split(' ')
+            literal = ''.join(literal_parts)
 
-    isSolvable = solver.solve()
-    solver.delete()  # Important to free resources
-    return isSolvable
+            if literal in variableMapping:
+                # Prepend '-' for negated literals to comply with PySAT format
+                variable = f"-{variableMapping[literal]}" if 'NOT' in is_negated else str(variableMapping[literal])
+                clause.append(int(variable))
 
-def evaluatePenaltyLogic(feasibleObjects, penaltyLogicRules, attributes):
+        if clause:
+            solver.add_clause(clause)
+
+    is_solvable = solver.solve()
+    solver.delete()  # Important to free resources after solving
+    return is_solvable
+
+def evaluatePenaltyLogic(feasibleObjects, penaltyLogicRules, attributes, variableMapping):
     penalties = {}
     for obj in feasibleObjects:
         totalPenalty = 0
         for condition, penalty in penaltyLogicRules:
-            # Debugging print to check condition evaluation and penalty application
-            isConditionMet = interpretAndCheckCondition(obj, condition, attributes)
-            if isConditionMet:
+            if evaluateCondition(obj, condition, attributes, variableMapping):
                 totalPenalty += penalty
         penalties[obj] = totalPenalty
     return penalties
 
+def evaluateCondition(encodedObject, condition, attributes, variableMapping):
+    # Split condition into individual clauses (assuming AND logic between clauses)
+    clauses = condition.split('AND')
+    for clause in clauses:
+        # Each clause can be a single literal or multiple literals with OR logic
+        if not evaluateOrClause(clause.strip(), encodedObject, attributes, variableMapping):
+            return False
+    return True
 
+def evaluateOrClause(clause, encodedObject, attributes, variableMapping):
+    literals = clause.split('OR')
+    for literal in literals:
+        if evaluateLiteral(literal.strip(), encodedObject, attributes, variableMapping):
+            return True  # If any literal is True, the OR clause is True
+    return False  # None of the literals in the OR clause is True
 
-def evaluateQualitativeChoiceLogic(feasibleObjects, qualitativeLogicRules, variableMapping):
-    preferences = []
+def evaluateLiteral(literal, encodedObject, attributes, variableMapping):
+    isNegated = 'NOT' in literal
+    literal = literal.replace('NOT ', '').strip()
+    attribute, value = next((attr, val) for attr, val in variableMapping if literal in attr)
 
-    for object1 in feasibleObjects:
-        for object2 in feasibleObjects:
-            if object1 != object2:
-                preference = compareObjects(object1, object2, qualitativeLogicRules, variableMapping)
-                preferences.append((object1, object2, preference))
+    attrIndex = list(attributes.keys()).index(attribute)
+    expectedValue = '1' if attributes[attribute][0] == value else '0'
+    actualValue = encodedObject[attrIndex]
 
+    return (actualValue == expectedValue) != isNegated
+
+def evaluateQualitativeChoiceLogic(feasibleObjects, qualitativeLogicRules, attributes, variableMapping):
+    preferences = {}
+    for obj1 in feasibleObjects:
+        for obj2 in feasibleObjects:
+            if obj1 == obj2:
+                continue  # Skip comparison with itself
+            preference = compareObjects(obj1, obj2, qualitativeLogicRules, attributes, variableMapping)
+            preferences[(obj1, obj2)] = preference
     return preferences
 
-def compareObjects(object1, object2, qualitiativeLogicRules, variableMapping, attributes):
-    preference = "incomparable"
-    for rule, condition in qualitiativeLogicRules:
-        if condition:
-            if not doesSatisfyCondition(object1, condition, variableMapping, attributes) and not doesSatisfyCondition(object2, condition, variableMapping, attributes):
-                continue
+def compareObjects(obj1, obj2, qualitativeLogicRules, attributes, variableMapping):
+    for rule, condition in qualitativeLogicRules:
+        if not evaluateCondition(condition, attributes, variableMapping):
+            continue  # Skip rules whose conditions are not met
+        preference = evaluateRule(rule, obj1, obj2, attributes, variableMapping)
+        if preference:
+            return preference
+    return "incomparable"  # Default if no rules apply
 
-        preferred, lessPreferred = rule.split(' BT ')
-
-        if doesSatisfyCondition(object1, preferred, variableMapping, attributes) and doesSatisfyCondition(object2, lessPreferred, variableMapping, attributes):
-            preference = "object1 preferred"
-        elif doesSatisfyCondition(object2, preferred, variableMapping, attributes) and doesSatisfyCondition(object1, lessPreferred, variableMapping, attributes):
-            preference = "object2 preferred"
-
-    return preference
+def evaluateRule(rule, obj1, obj2, attributes, variableMapping):
+    preferenceParts = rule.split('BT')
+    for i in range(len(preferenceParts) - 1):
+        preferredCondition = preferenceParts[i].strip()
+        lessPreferredCondition = preferenceParts[i + 1].strip()
+        
+        if evaluateCondition(obj1, preferredCondition, attributes, variableMapping) and evaluateCondition(obj2, lessPreferredCondition, attributes, variableMapping):
+            return "obj1 preferred over obj2"
+        elif evaluateCondition(obj2, preferredCondition, attributes, variableMapping) and evaluateCondition(obj1, lessPreferredCondition, attributes, variableMapping):
+            return "obj2 preferred over obj1"
+    return None  # No preference determined by this rule
 
 def doesSatisfyCondition(encodedObject, condition, variableMapping, attributes):
     reverseMapping = {v: k for k, v in variableMapping.items()}
