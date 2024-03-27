@@ -88,8 +88,8 @@ def userInterface():
 
         combinations = generateCombinations(attributes)
         encodedObjects = encodeCombinations(combinations, attributes)
-        print("Encoded Objects (sample):", encodedObjects[:5])
-        print("Length of an Encoded Object:", len(encodedObjects[0]) if encodedObjects else "N/A")
+        print("Encoded Objects: ", encodedObjects)
+        print("Length of an Encoded Object: ", len(encodedObjects[0]) if encodedObjects else "N/A")
         map, _ = mapAttributesToIntegers(attributes)
         print("Attribute to Integer Mapping: ", map)
         clauses = convertConstraintsToClauses(constraints, attributes, map)
