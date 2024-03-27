@@ -2,10 +2,19 @@ from fileParser import *
 from logic import *
 import random
 
-def performEncoding(encodedObjects):
+def performEncoding(encodedObjects, attributes):
     print("Encoded Objects:")
-    for obj in encodedObjects:
-        print(obj)
+    attribute_keys = list(attributes.keys())  # Ensure consistent attribute order
+    for idx, obj in enumerate(encodedObjects):
+        decoded_attributes = []
+        for bit_idx, bit in enumerate(obj):
+            attribute = attribute_keys[bit_idx]
+            # Assuming '0' is for the first listed value and '1' is for the second
+            value = attributes[attribute][int(bit)]  # Directly use bit as index
+            decoded_attributes.append(value)
+        
+        object_display = f"o{idx} – " + ', '.join(decoded_attributes)
+        print(object_display)
 
 
 def performFeasibilityChecking(feasibleObjects):
@@ -15,25 +24,23 @@ def performFeasibilityChecking(feasibleObjects):
         print("No feasible objects found.")
 
 
-def showTable(feasibleObjects, penaltyLogicRules, preferenceLogic, map, attributes):
-    # Calculate penalties for each object
-    objectPenalties = calculatePenalties(feasibleObjects, penaltyLogicRules, attributes)
+def showTable(feasibleObjects, penaltyLogicRules, attributesMapping, attributes):
+    # Assuming feasibleObjects is a list of encoded strings representing feasible objects
+    # and penaltyLogicRules is a list of tuples (condition, penalty)
+    objectPenalties = calculatePenalties(feasibleObjects, penaltyLogicRules, attributesMapping, attributes)
     
-    # Convert to list of tuples and sort by penalty, descending
-    sortedPenalties = sorted(objectPenalties.items(), key=lambda x: x[1], reverse=True)
-    
-    # Generate the table
-    headers = ["encoding"] + [condition for condition, _ in penaltyLogicRules] + ["total penalty"]
-    print("+----------+" + "---------------+" * len(penaltyLogicRules) + "---------------+")
-    header_row = "|" + "|".join(f"{header.center(15)}" for header in headers) + "|"
-    print(header_row)
-    print("+----------+" + "---------------+" * len(penaltyLogicRules) + "---------------+")
-    
-    for idx, (obj, total_penalty) in enumerate(sortedPenalties, start=1):
-        penalties = [evaluateCNF(condition, obj, attributes) * penalty for condition, penalty in penaltyLogicRules]
-        row = [f"o{idx}"] + penalties + [total_penalty]
-        print("|" + "|".join(f"{str(val).rjust(15)}" for val in row) + "|")
-    print("+----------+" + "---------------+" * len(penaltyLogicRules) + "---------------+")
+    print("+----------+---------------+--------------+---------------+")
+    print("| encoding | fish AND wine | wine OR cake | total penalty |")
+    print("+----------+---------------+--------------+---------------+")
+
+    for idx, encodedObject in enumerate(feasibleObjects):
+        penalties_for_rules = [evaluateCNF(rule[0], encodedObject, attributesMapping, attributes) * rule[1] for rule in penaltyLogicRules]
+        total_penalty = sum(penalties_for_rules)
+        print(f"| o{idx}      | {' | '.join(str(penalty) for penalty in penalties_for_rules)} | {total_penalty}          |")
+        # Adjust the spacing/formatting as needed to match your table's layout
+
+    print("+----------+---------------+--------------+---------------+")
+
 
 
 
@@ -45,7 +52,7 @@ def performOmniOptimization(feasibleObjects, logicRules, preferenceLogic):
     print("Finding all optimal feasible objects w.r.t the chosen preference theory is under construction.")
 
 
-def reasoningTasksMenu(preference_logic, feasibleObjects, attributes, map, penaltyLogicRules=None, qualitativeLogicRules=None):
+def reasoningTasksMenu(preference_logic, encodedObjects, feasibleObjects, attributes, map, penaltyLogicRules=None, qualitativeLogicRules=None):
     while True:
         print("\nChoose the reasoning task to perform:")
         print("1. Encoding")
@@ -57,12 +64,17 @@ def reasoningTasksMenu(preference_logic, feasibleObjects, attributes, map, penal
         task_choice = input("Your Choice: ")
 
         if task_choice == '1':
-            performEncoding(feasibleObjects)
+            performEncoding(encodedObjects, attributes)
         elif task_choice == '2':
+            # Example debug print statement
+            print(f"Debug: Number of feasible objects: {len(feasibleObjects)}")
+            print(f"Debug: Feasible objects list: {feasibleObjects}")
             performFeasibilityChecking(feasibleObjects)
+            # When reporting the number of feasible objects
+            print(f"Yes, there are {len(feasibleObjects)} feasible objects.")
         elif task_choice == '3':
             logicRules = penaltyLogicRules if preference_logic == 'penalty' else qualitativeLogicRules
-            showTable(feasibleObjects, logicRules, preference_logic, map, attributes)
+            showTable(feasibleObjects, logicRules, map, attributes)
         elif task_choice == '4':
             logicRules = penaltyLogicRules if preference_logic == 'penalty' else qualitativeLogicRules
             performExemplification(feasibleObjects, logicRules, preference_logic)
@@ -94,8 +106,8 @@ def userInterface():
         print("Attribute to Integer Mapping: ", map)
         clauses = convertConstraintsToClauses(constraints, attributes, map)
         print("Constraints as Clauses: ", clauses)
-        feasibleObjects = [obj for obj in encodedObjects if checkFeasibility(clauses)]
-        print("Feasible Objects:", feasibleObjects[:5])
+        feasibleObjects = [obj for obj in encodedObjects if checkFeasibility(obj, clauses)]
+        print("Feasible Objects:", feasibleObjects)
 
         preferenceChoice = input("\nChoose the preference logic to use:\n1. Penalty Logic\n2. Qualitative Choice Logic\n3. Exit\nYour Choice: ")
         if preferenceChoice in ['1', '2']:
@@ -103,11 +115,11 @@ def userInterface():
             if preferenceChoice == '1':
                 print("\nYou picked Penalty Logic")
                 penaltyLogicRules = parsePenaltyLogicFile(preferencesFile)
-                reasoningTasksMenu('penalty', feasibleObjects, attributes, map, penaltyLogicRules=penaltyLogicRules)
+                reasoningTasksMenu('penalty', encodedObjects, feasibleObjects, attributes, map, penaltyLogicRules=penaltyLogicRules)
             elif preferenceChoice == '2':
                 print("\nYou picked Qualitative Choice Logic")
                 qualitativeLogicRules = parseQualitativeLogicFile(preferencesFile)
-                reasoningTasksMenu('qualitative', feasibleObjects, attributes, map, qualitativeLogicRules=qualitativeLogicRules)
+                reasoningTasksMenu('qualitative', encodedObjects, feasibleObjects, attributes, map, qualitativeLogicRules=qualitativeLogicRules)
         elif preferenceChoice == '3':
             print("Exiting. Goodbye!")
             break

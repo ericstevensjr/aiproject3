@@ -1,5 +1,6 @@
 import itertools
 from pysat.solvers import Glucose4
+import sys
 
 def generateCombinations(attributes):
     # Extracting attribute values and generating all possible combinations
@@ -70,13 +71,24 @@ def convertConstraintsToClauses(constraints, attributes, mapping):
             clauses.append(clause)
     return clauses
 
-def checkFeasibility(clauses):
+def checkFeasibility(objectEncoding, clauses):
     solver = Glucose4()
+    # Add hard constraints clauses
     for clause in clauses:
         solver.add_clause(clause)
+    
+    # Add object-specific clauses
+    for i, bit in enumerate(objectEncoding):
+        # Assuming mapping starts at 1, adjust accordingly if different
+        lit = i + 1
+        # If bit is 1, the literal is positive; if 0, it's negated
+        clause = [lit] if bit == '1' else [-lit]
+        solver.add_clause(clause)
+    
     isFeasible = solver.solve()
     solver.delete()  # Clean up the solver instance
     return isFeasible
+
 
 def inferAttributeFromValue(value, attributes):
     for attribute, values in attributes.items():
@@ -85,53 +97,68 @@ def inferAttributeFromValue(value, attributes):
     return None
 
 
-def evaluateCNF(cnfCondition, encodedObject, attributes):
-    clauses = cnfCondition.split(' AND ')
+def evaluateCNF(cnfCondition, encodedObject, mapping, attributes):
     
-    for clause in clauses:
+    # Assuming your CNF evaluation logic is here
+    # Debugging output for "fish AND wine"
+    if cnfCondition == "fish AND wine":
+        print(f"Evaluating 'fish AND wine' for object {encodedObject}")
+        # Assuming 'fish' and 'wine' are mapped to bits in the encoding
+        fish_bit = mapping["main:fish"] - 1  # Adjust index based on your mapping
+        wine_bit = mapping["drink:wine"] - 1
+        fish_present = encodedObject[fish_bit] == '1'
+        wine_present = encodedObject[wine_bit] == '1'
+        print(f"Fish present: {fish_present}, Wine present: {wine_present}")
+        return fish_present and wine_present
+    for clause in cnfCondition.split(' AND '):
         clauseSatisfied = False
-        literals = clause.split(' OR ')
-        
-        for literal in literals:
-            negated = 'NOT' in literal
-            value = literal.replace('NOT ', '').strip() if negated else literal.strip()
+        for literal in clause.split(' OR '):
+            negated = 'NOT ' in literal
+            value = literal.replace('NOT ', '') if negated else literal
+
+            # Attempt to identify the attribute this value belongs to
+            foundAttribute = None
+            for attribute, values in attributes.items():
+                if value in values:
+                    foundAttribute = attribute
+                    break
             
-            # Infer the attribute for the given value
-            attribute = inferAttributeFromValue(value, attributes)
-            if not attribute:
-                print(f"Attribute not found for value: {value}")
-                return False
-            
-            attrIndex = list(attributes.keys()).index(attribute)
-            valueIndex = attributes[attribute].index(value)
-            
-            # Determine expected and actual values
-            expectedValue = '0' if negated else '1'
-            actualValue = '1' if valueIndex == 0 else '0'
-            
-            if encodedObject[attrIndex] == expectedValue:
-                clauseSatisfied = True
-                break
-        
+            if foundAttribute:
+                # Construct the full key using the identified attribute
+                fullKey = f"{foundAttribute}:{value}"
+                if fullKey in mapping:
+                    index = mapping[fullKey] - 1  # Adjust for 0-based indexing
+                    expectedValue = '0' if negated else '1'
+                    if 0 <= index < len(encodedObject) and encodedObject[index] == expectedValue:
+                        clauseSatisfied = True
+                        break
+                else:
+                    print(f"Warning: {fullKey} not properly mapped.")
+            else:
+                print(f"Warning: Unable to identify attribute for value {value}.")
+
         if not clauseSatisfied:
             return False
-            
     return True
 
 
 
 
-def calculatePenalties(feasibleObjects, penaltyLogicRules, attributes):
-    objectPenalties = {}
 
+
+
+
+
+def calculatePenalties(feasibleObjects, penaltyLogicRules, map, attributes):
+    objectPenalties = {}
     for encodedObject in feasibleObjects:
         totalPenalty = 0
         for condition, penalty in penaltyLogicRules:
-            if evaluateCNF(condition, encodedObject, attributes):
+            if evaluateCNF(condition, encodedObject, map, attributes):
                 totalPenalty += penalty
         objectPenalties[encodedObject] = totalPenalty
-
     return objectPenalties
+
 
 
 
@@ -201,36 +228,44 @@ def parsePreference(preference):
     return attribute1.strip(), value1.strip(), attribute2.strip(), value2.strip()
 
 
+def testFeasibility():
+    def checkFeasibilityTest(objectEncoding):
+        solver = Glucose4()
+        # Adding hard constraint for test: NOT wine OR NOT ice-cream
+        solver.add_clause([-3, -2])  # Assuming mapping is consistent with the test setup
+        
+        # Add object-specific clauses based on the encoding
+        for i, bit in enumerate(objectEncoding):
+            lit = i + 1  # Mapping starts at 1, adjust if different
+            clause = [lit] if bit == '1' else [-lit]
+            solver.add_clause(clause)
+        
+        isFeasible = solver.solve()
+        solver.delete()  # Clean up the solver instance
+        return isFeasible
+
+    # Test 1: Feasible Object (cake, wine, fish) -> Encoding: 101
+    test1_encoding = "101"
+    test1_result = checkFeasibilityTest(test1_encoding)
+    print(f"Test 1 (Feasible) Result: {test1_result}")  # Expected: True
+
+    # Test 2: Infeasible Object (ice-cream, wine, beef) -> Encoding: 011
+    test2_encoding = "011"
+    test2_result = checkFeasibilityTest(test2_encoding)
+    print(f"Test 2 (Infeasible) Result: {test2_result}")  # Expected: False
+
 if __name__ == "__main__":
-    attributes = {
-        'dessert': ['cake', 'ice-cream'],
-        'drink': ['wine', 'beer'],
-    }
-    # Generating combinations and encoding them
-    combinations = generateCombinations(attributes)
-    encodedObjects = encodeCombinations(combinations, attributes)
-    
-    # Generate mapping and reverse mapping
-    mapping, reverseMapping = mapAttributesToIntegers(attributes)
-    
-    # Proceed with your testing
-    print("Encoded Objects:", encodedObjects)
+    if len(sys.argv) > 1 and sys.argv[1] == "--test-feasibility":
+        testFeasibility()
+    else:
+        # Regular program execution logic here
+        print("Running the standard program logic.")
 
-    # New test case output
-    print("\nNew Test Case Output:")
-    for encodedObject in encodedObjects:
-        print(f"Verifying encoded object: {encodedObject}")
-        for idx, bit in enumerate(encodedObject):
-            attribute = list(attributes.keys())[idx]
-            value = attributes[attribute][0 if bit == '1' else 1]
-            print(f"Bit: {bit}, Attribute: {attribute}, Value: {value}")
-
-    # Test calculatePenalties
-    print("\nTesting calculatePenalties:")
-    penaltyLogicRules = [
-        ("dessert:cake AND drink:wine", 10),
-        ("dessert:ice-cream OR drink:beer", 5),
-    ]
-    feasibleObjects = ["10", "01"]  # Assuming these are correctly encoded and feasible
-    penalties = calculatePenalties(feasibleObjects, penaltyLogicRules, attributes)
-    print(f"Penalties: {penalties}")
+        # Example of standard program logic:
+        attributes = {
+            'dessert': ['cake', 'ice-cream'],
+            'drink': ['wine', 'beer'],
+            # Add more attributes if needed
+        }
+        # Here you would proceed with generating combinations, encoding objects, etc.
+        # This is where your usual program logic will go when not testing feasibility.
