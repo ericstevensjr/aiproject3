@@ -17,7 +17,7 @@ def performFeasibilityChecking(feasibleObjects):
 
 def showTable(feasibleObjects, penaltyLogicRules, preferenceLogic, map, attributes):
     # Calculate penalties for each object
-    objectPenalties = calculatePenalties(feasibleObjects, penaltyLogicRules, map, attributes)
+    objectPenalties = calculatePenalties(feasibleObjects, penaltyLogicRules, attributes)
     
     # Convert to list of tuples and sort by penalty, descending
     sortedPenalties = sorted(objectPenalties.items(), key=lambda x: x[1], reverse=True)
@@ -30,7 +30,7 @@ def showTable(feasibleObjects, penaltyLogicRules, preferenceLogic, map, attribut
     print("+----------+" + "---------------+" * len(penaltyLogicRules) + "---------------+")
     
     for idx, (obj, total_penalty) in enumerate(sortedPenalties, start=1):
-        penalties = [evaluateCNF(condition, obj, map, attributes) * penalty for condition, penalty in penaltyLogicRules]
+        penalties = [evaluateCNF(condition, obj, attributes) * penalty for condition, penalty in penaltyLogicRules]
         row = [f"o{idx}"] + penalties + [total_penalty]
         print("|" + "|".join(f"{str(val).rjust(15)}" for val in row) + "|")
     print("+----------+" + "---------------+" * len(penaltyLogicRules) + "---------------+")

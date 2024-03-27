@@ -22,6 +22,7 @@ def encodeCombinations(combinations, attributes):
             encodedObject += bit
         encodedObjects.append(encodedObject)
 
+    print("Encoded Objects:", encodedObjects)  # Print statement added
     return encodedObjects
 
 
@@ -32,12 +33,12 @@ def mapAttributesToIntegers(attributes):
 
     for attribute, values in attributes.items():
         for value in values:
-            # Mapping each attribute value to a unique integer
             mapping[f"{attribute}:{value}"] = counter
             reverseMapping[counter] = f"{attribute}:{value}"
             counter += 1
 
-    print(mapping)
+    print("Mapping:", mapping)  # Print statement added
+    print("Reverse Mapping:", reverseMapping)  # Print statement added
     return mapping, reverseMapping
 
 
@@ -77,51 +78,61 @@ def checkFeasibility(clauses):
     solver.delete()  # Clean up the solver instance
     return isFeasible
 
+def inferAttributeFromValue(value, attributes):
+    for attribute, values in attributes.items():
+        if value in values:
+            return attribute
+    return None
 
-def evaluateCNF(cnfCondition, encodedObject, mapping, attributes):
-    # Split the CNF condition into clauses (AND-separated)
+
+def evaluateCNF(cnfCondition, encodedObject, attributes):
     clauses = cnfCondition.split(' AND ')
+    
     for clause in clauses:
-        # Initialize clauseSatisfied to False at the start of each clause evaluation
         clauseSatisfied = False
-
-        # A clause is satisfied if at least one literal is true
         literals = clause.split(' OR ')
+        
         for literal in literals:
             negated = 'NOT' in literal
-            attrValue = literal.replace('NOT ', '') if negated else literal
-            for attribute, values in attributes.items():
-                for value in values:
-                    key = f"{attribute}:{value}"
-                    if key in mapping:
-                        index = mapping[key] - 1  # Adjust to 0-based index
-                        expectedValue = '0' if negated else '1'
-                        # Ensure index is within bounds
-                        if 0 <= index < len(encodedObject) and encodedObject[index] == expectedValue:
-                            clauseSatisfied = True
-                            break
-
-            if clauseSatisfied:
+            value = literal.replace('NOT ', '').strip() if negated else literal.strip()
+            
+            # Infer the attribute for the given value
+            attribute = inferAttributeFromValue(value, attributes)
+            if not attribute:
+                print(f"Attribute not found for value: {value}")
+                return False
+            
+            attrIndex = list(attributes.keys()).index(attribute)
+            valueIndex = attributes[attribute].index(value)
+            
+            # Determine expected and actual values
+            expectedValue = '0' if negated else '1'
+            actualValue = '1' if valueIndex == 0 else '0'
+            
+            if encodedObject[attrIndex] == expectedValue:
+                clauseSatisfied = True
                 break
-
+        
         if not clauseSatisfied:
-            # If any clause is not satisfied, the CNF condition is not met
             return False
+            
     return True
 
 
 
-def calculatePenalties(feasibleObjects, penaltyLogicRules, map, attributes):
-    objectPenalties ={}
+
+def calculatePenalties(feasibleObjects, penaltyLogicRules, attributes):
+    objectPenalties = {}
 
     for encodedObject in feasibleObjects:
         totalPenalty = 0
         for condition, penalty in penaltyLogicRules:
-            if evaluateCNF(condition, encodedObject, map, attributes):
+            if evaluateCNF(condition, encodedObject, attributes):
                 totalPenalty += penalty
         objectPenalties[encodedObject] = totalPenalty
-    
+
     return objectPenalties
+
 
 
 def createEncodingMapping(attributes):
@@ -188,3 +199,38 @@ def parsePreference(preference):
     attribute2, value2 = attributeValuePair2.split(':')
 
     return attribute1.strip(), value1.strip(), attribute2.strip(), value2.strip()
+
+
+if __name__ == "__main__":
+    attributes = {
+        'dessert': ['cake', 'ice-cream'],
+        'drink': ['wine', 'beer'],
+    }
+    # Generating combinations and encoding them
+    combinations = generateCombinations(attributes)
+    encodedObjects = encodeCombinations(combinations, attributes)
+    
+    # Generate mapping and reverse mapping
+    mapping, reverseMapping = mapAttributesToIntegers(attributes)
+    
+    # Proceed with your testing
+    print("Encoded Objects:", encodedObjects)
+
+    # New test case output
+    print("\nNew Test Case Output:")
+    for encodedObject in encodedObjects:
+        print(f"Verifying encoded object: {encodedObject}")
+        for idx, bit in enumerate(encodedObject):
+            attribute = list(attributes.keys())[idx]
+            value = attributes[attribute][0 if bit == '1' else 1]
+            print(f"Bit: {bit}, Attribute: {attribute}, Value: {value}")
+
+    # Test calculatePenalties
+    print("\nTesting calculatePenalties:")
+    penaltyLogicRules = [
+        ("dessert:cake AND drink:wine", 10),
+        ("dessert:ice-cream OR drink:beer", 5),
+    ]
+    feasibleObjects = ["10", "01"]  # Assuming these are correctly encoded and feasible
+    penalties = calculatePenalties(feasibleObjects, penaltyLogicRules, attributes)
+    print(f"Penalties: {penalties}")
