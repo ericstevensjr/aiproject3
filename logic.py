@@ -111,18 +111,16 @@ def evaluateCNF(cnfCondition, encodedObject, mapping, attributes):
 
 
 
-def calculatePenalties(feasibleObjects, penaltyLogicRules, map):
-    objectPenalties = {}
+def calculatePenalties(feasibleObjects, penaltyLogicRules, map, attributes):
+    objectPenalties ={}
 
-    for encodedObject in feasibleObjects[:5]:  # Check a few examples
+    for encodedObject in feasibleObjects:
         totalPenalty = 0
         for condition, penalty in penaltyLogicRules:
-            result = evaluateCNF(condition, encodedObject, map)
-            print(f"Condition: {condition}, Result: {result}, Penalty: {penalty}")  # Debug print
-            if result:
+            if evaluateCNF(condition, encodedObject, map, attributes):
                 totalPenalty += penalty
-        print(f"Object: {encodedObject}, Total Penalty: {totalPenalty}")  # Final penalty for an object
-
+        objectPenalties[encodedObject] = totalPenalty
+    
     return objectPenalties
 
 

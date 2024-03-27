@@ -16,34 +16,25 @@ def performFeasibilityChecking(feasibleObjects):
 
 
 def showTable(feasibleObjects, penaltyLogicRules, preferenceLogic, map, attributes):
-    print(feasibleObjects[:5])
-    if preferenceLogic == 'penalty':
-        # Headers
-        headers = ["encoding"] + [condition for condition, _ in penaltyLogicRules] + ["total penalty"]
+    # Calculate penalties for each object
+    objectPenalties = calculatePenalties(feasibleObjects, penaltyLogicRules, map, attributes)
+    
+    # Convert to list of tuples and sort by penalty, descending
+    sortedPenalties = sorted(objectPenalties.items(), key=lambda x: x[1], reverse=True)
+    
+    # Generate the table
+    headers = ["encoding"] + [condition for condition, _ in penaltyLogicRules] + ["total penalty"]
+    print("+----------+" + "---------------+" * len(penaltyLogicRules) + "---------------+")
+    header_row = "|" + "|".join(f"{header.center(15)}" for header in headers) + "|"
+    print(header_row)
+    print("+----------+" + "---------------+" * len(penaltyLogicRules) + "---------------+")
+    
+    for idx, (obj, total_penalty) in enumerate(sortedPenalties, start=1):
+        penalties = [evaluateCNF(condition, obj, map, attributes) * penalty for condition, penalty in penaltyLogicRules]
+        row = [f"o{idx}"] + penalties + [total_penalty]
+        print("|" + "|".join(f"{str(val).rjust(15)}" for val in row) + "|")
+    print("+----------+" + "---------------+" * len(penaltyLogicRules) + "---------------+")
 
-        # Calculate penalties for each object and sort by total penalty
-        penalties_data = []
-        for idx, obj in enumerate(feasibleObjects, 1):
-            penalties = [evaluateCNF(condition, obj, map, attributes) * penalty for condition, penalty in penaltyLogicRules]
-            total_penalty = sum(penalties)
-            penalties_data.append((f"o{idx}", *penalties, total_penalty))
-
-        # Sort by total penalty, highest first
-        penalties_data.sort(key=lambda x: x[-1], reverse=True)
-
-        # Determine column widths
-        column_widths = [max(len(str(row[i])) for row in [headers] + penalties_data) + 2 for i in range(len(headers))]
-
-        # Print header
-        header_row = "|" + "|".join(header.center(width) for header, width in zip(headers, column_widths)) + "|"
-        print("-" * len(header_row))
-        print(header_row)
-        print("-" * len(header_row))
-
-        # Print rows
-        for row in penalties_data:
-            print("|" + "|".join(str(val).rjust(width) for val, width in zip(row, column_widths)) + "|")
-        print("-" * len(header_row))
 
 
 def performExemplification(feasibleObjects, logicRules, preferenceLogic):
