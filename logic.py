@@ -39,35 +39,40 @@ def performEncoding(encodedObjects, attributes):
 
 
 def isFeasible(encodedObject, attributes, constraints):
-    print("Inside isFeasible, attributes is a:", type(attributes))
-    # Maps attribute names to their indexes based on the ordering in attributes
-    attribIndex = {attrib: i for i, attrib in enumerate(attributes.keys())}
+    # Convert attributes to a list to ensure consistent ordering
+    attributesList = list(attributes.keys())
 
     for constraint in constraints:
+        # Start with the assumption that the clause is not satisfied
         clauseSatisfied = False
+
         for literal in constraint:
             isNegated = 'NOT ' in literal
-            # Extract attribute name and value from the literal
-            attributeValue = literal.replace('NOT ', '').strip()
+            attributeValue = literal.replace('NOT ', '')
+
+            # Determine which attribute and value this literal corresponds to
             for attribute, values in attributes.items():
                 if attributeValue in values:
-                    # Determine the index of the attribute in the encoded object
-                    index = attribIndex[attribute]
-                    # Determine the expected bit value based on whether the literal is negated
-                    expectedBit = '0' if isNegated else '1'
-                    # Determine the bit value in the encoded object
-                    actualBit = encodedObject[index]
-                    if actualBit == expectedBit:
-                        clauseSatisfied = True
-                        break  # A single true literal is enough for the clause to be satisfied
-            if clauseSatisfied:
-                break  # Move to the next clause if the current one is satisfied
+                    attributeIndex = attributesList.index(attribute)
+                    valueIndex = values.index(attributeValue)
+                    bit = '1' if valueIndex == 0 else '0'
 
+                    if isNegated:
+                        # For negation, the clause is satisfied if the bit is NOT set
+                        if encodedObject[attributeIndex] != bit:
+                            clauseSatisfied = True
+                            break
+                    else:
+                        # For a regular literal, the clause is satisfied if the bit is set
+                        if encodedObject[attributeIndex] == bit:
+                            clauseSatisfied = True
+                            break
+
+        # If none of the literals in a clause are satisfied, the object is infeasible
         if not clauseSatisfied:
-            # If after checking all literals in a clause, none are satisfied, the object is infeasible
             return False
 
-    # The object is feasible if all clauses are either satisfied or at least one literal per clause is satisfied
+    # The object is feasible if it does not violate any of the constraints
     return True
 
 
