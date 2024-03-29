@@ -7,10 +7,10 @@ def parseAttributesFile(filename):
     attributes = {}
     with open(filename, 'r') as file:
         for line in file:
-            parts = line.strip().split(':')
+            parts = line.strip().split(': ')
             if len(parts) == 2:
                 attr_name, values = parts
-                attributes[attr_name.strip()] = [value.strip() for value in values.split(',')]
+                attributes[attr_name.strip()] = [value.strip() for value in values.split(', ')]
     return attributes
 
 def parseConstraintFile(filename):
@@ -23,7 +23,7 @@ def parseConstraintFile(filename):
         for line in file:
             # Assuming each line is a single constraint consisting of literals separated by ' OR '
             # and optionally prefixed with 'NOT ' for negation.
-            constraint = [literal.strip() for literal in line.strip().split('OR')]
+            constraint = [literal.strip() for literal in line.strip().split(' OR ')]
             constraints.append(constraint)
     return constraints
 

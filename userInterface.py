@@ -1,6 +1,7 @@
 from fileParser import *
 from logic import *
-def reasoningTasksMenu(attributes, feasibleObjects, penaltyLogicRules=None, qualitativeLogicRules=None):
+
+def reasoningTasksMenu(attributes, encodedObjects, feasibleObjects, constraints, penaltyLogicRules=None, qualitativeLogicRules=None):
     while True:
         print("\nChoose the reasoning task to perform:")
         print("1. Encoding")
@@ -12,10 +13,16 @@ def reasoningTasksMenu(attributes, feasibleObjects, penaltyLogicRules=None, qual
         task_choice = input("Your Choice: ")
 
         if task_choice == '1':
-            encodedObjects = encodeCombinations(generateCombinations(attributes), attributes)
             performEncoding(encodedObjects, attributes)
         elif task_choice == '2':
-            print("Feasibility Checking not fully implemented.")  # Placeholder for actual functionality
+            # Assuming constraints are already parsed and available in a suitable format
+            # And assuming attributes and encodedObjects are defined and available
+            # Inform the user about the result of the feasibility check
+            if feasibleObjects:
+                print(f"There are {len(feasibleObjects)} feasible objects.")
+                # Optionally, list the feasible objects or perform further actions with them
+            else:
+                print("No feasible objects found.")
         elif task_choice == '3':
             if penaltyLogicRules:
                 showTable(feasibleObjects, penaltyLogicRules, attributes)
@@ -37,9 +44,9 @@ def userInterface():
     constraintsFile = input("Enter Hard Constraints File Name: ")
     attributes = parseAttributesFile(attributesFile)
     constraints = parseConstraintFile(constraintsFile)
-
+    encodedObjects = encodeCombinations(generateCombinations(attributes), attributes)
     # Assuming there's logic here to apply constraints and find feasibleObjects
-    feasibleObjects = []  # Placeholder for feasible objects based on constraints
+    feasibleObjects = checkFeasibility(encodedObjects, constraints, attributes)
 
     while True:
         print("Choose the preference logic to use:")
@@ -52,12 +59,12 @@ def userInterface():
             preferencesFile = input("Enter Preferences File Name: ")
             penaltyLogicRules = parsePenaltyLogicFile(preferencesFile)
             print("\nYou picked Penalty Logic")
-            reasoningTasksMenu(attributes, feasibleObjects, penaltyLogicRules=penaltyLogicRules)
+            reasoningTasksMenu(attributes, encodedObjects, feasibleObjects, constraints, penaltyLogicRules=penaltyLogicRules)
         elif preferenceChoice == '2':
             preferencesFile = input("Enter Preferences File Name: ")
             qualitativeLogicRules = parseQualitativeLogicFile(preferencesFile)
             print("\nYou picked Qualitative Choice Logic")
-            reasoningTasksMenu(attributes, feasibleObjects, qualitativeLogicRules=qualitativeLogicRules)
+            reasoningTasksMenu(attributes, encodedObjects, feasibleObjects, constraints, qualitativeLogicRules=qualitativeLogicRules)
         elif preferenceChoice == '3':
             print("Exiting. Goodbye!")
             break
