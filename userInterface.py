@@ -27,7 +27,7 @@ def reasoningTasksMenu(attributes, encodedObjects, feasibleObjects, constraints,
                 print("No feasible objects found.")
         elif task_choice == '3':
             if penaltyLogicRules:
-                showTable(feasibleObjects, penaltyLogicRules, attributes)
+                showTable(feasibleObjects, attributes)
             else:
                 print("No penalty logic rules provided.")
         elif task_choice == '4':

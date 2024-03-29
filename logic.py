@@ -92,23 +92,42 @@ def evaluateCondition(encodedObject, clause, attributes):
     # This function needs to be implemented based on your specific logic
     return True  # Placeholder return value
 
-def showTable(feasibilityResults, penaltyLogicRules, attributes):
+def showTable(feasibilityResults, attributes):
     print("+----------+---------------+--------------+---------------+")
     print("| encoding | fish AND wine | wine OR cake | total penalty |")
     print("+----------+---------------+--------------+---------------+")
 
-    for index, obj, is_obj_feasible in enumerate(feasibilityResults):
-        if is_obj_feasible:
-            # Calculate penalties and display the row for feasible objects
-            penalties_for_rules = [evaluateCondition(obj, condition, attributes) * penalty
-                                   for condition, penalty in penaltyLogicRules]
-            total_penalty = sum(penalties_for_rules)
-            penalties_display = ' | '.join(str(p) for p in penalties_for_rules)
-            print(f"| o{index:<8}| {penalties_display} | {total_penalty:<13}|")
+    for idx, (objId, encodedObj, isFeasible) in enumerate(feasibilityResults):
+        if isFeasible:
+            # Assuming attributes are already correctly ordered and indexed
+            decoded_attributes = [attributes[attr][int(bit)] for attr, bit in zip(attributes.keys(), encodedObj)]
+            # Construct the row for the table; you'll need to adjust this part based on how you calculate penalties
+            penalties_for_rules = ['0' for _ in range(2)]  # Placeholder for actual penalty values
+            total_penalty = '0'  # Placeholder for the total penalty calculation
+            row = f"| {objId.ljust(10)}| {' | '.join(penalties_for_rules).ljust(14)}| {total_penalty.ljust(13)}|"
+            print(row)
+
     print("+----------+---------------+--------------+---------------+")
 
 
-def evaluatePenaltyCondition(encodedObject, condition, attributes):
-    # Evaluate a penalty condition against the encoded object
-    # Placeholder for actual implementation
-    return True
+def evaluatePenaltyCondition(encodedObjects, condition, attributes, map):
+    clauses = condition.split(' AND ')
+    for clause in clauses:
+        # Each clause can be a simple attribute or NOT attribute
+        isNegated = 'NOT ' in clause
+        attrValue = clause.replace('NOT ', '')
+        
+        # Identify the attribute and its expected binary representation
+        for attribute, values in attributes.items():
+            if attrValue in values:
+                expected_value = map[attrValue]
+                index = list(attributes.keys()).index(attribute)
+                
+                # Check if the condition is met in the encoded object
+                actual_value = encodedObjects[index]
+                if (isNegated and actual_value == expected_value) or (not isNegated and actual_value != expected_value):
+                    # Clause not satisfied, return 0 penalty for this rule
+                    return 0
+
+    # If all clauses are satisfied, return the associated penalty
+    return condition[1]  # Assuming the condition is a tuple (condition_str, penalty)
