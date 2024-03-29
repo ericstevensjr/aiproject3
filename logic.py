@@ -16,34 +16,25 @@ def encodeCombinations(combinations, attributes):
     ]
 
 def encodeCombinations(combinations, attributes):
-    """
-    Encodes each combination of attribute values into binary strings where
-    the first listed value gets a '1' and the second listed value gets a '0'.
-    """
     encodedObjects = []
     for combination in combinations:
         encodedObject = ''
         for value, (attribute, values) in zip(combination, attributes.items()):
-            # Assign '1' for the first listed value and '0' for the second
+            # Assign '1' for the first listed value and '0' for the second listed value
             bit = '1' if values.index(value) == 0 else '0'
             encodedObject += bit
         encodedObjects.append(encodedObject)
     return encodedObjects
 
 def performEncoding(encodedObjects, attributes):
-    """
-    Prints the encoded objects along with their decoded attribute values.
-    Adjusted to ensure the binary encoding reflects the new scheme.
-    """
     print("Encoded Objects:")
-    for idx, obj in enumerate(encodedObjects):
+    for idx, obj in enumerate(reversed(encodedObjects)):
         decoded_attributes = []
         for bit, (attribute, values) in zip(obj, attributes.items()):
             # Decode each bit to its corresponding attribute value
             value = values[0] if bit == '1' else values[1]
             decoded_attributes.append(value)
-        print(f"o{idx} – " + ', '.join(decoded_attributes))
-
+        print(f"o{idx} – {obj}: " + ', '.join(decoded_attributes))
 
 
 
