@@ -18,6 +18,8 @@ def reasoningTasksMenu(attributes, encodedObjects, feasibleObjects, constraints,
             # Assuming constraints are already parsed and available in a suitable format
             # And assuming attributes and encodedObjects are defined and available
             # Inform the user about the result of the feasibility check
+            for feasibleObject in feasibleObjects:
+                print("Object: ", feasibleObject)
             if feasibleObjects:
                 print(f"There are {len(feasibleObjects)} feasible objects.")
                 # Optionally, list the feasible objects or perform further actions with them
@@ -46,7 +48,9 @@ def userInterface():
     constraints = parseConstraintFile(constraintsFile)
     encodedObjects = encodeCombinations(generateCombinations(attributes), attributes)
     # Assuming there's logic here to apply constraints and find feasibleObjects
-    feasibleObjects = checkFeasibility(encodedObjects, constraints, attributes)
+    print("Attributes structure before calling isFeasible:", attributes)
+
+    feasibleObjects = checkFeasibility(encodedObjects, attributes, constraints)
 
     while True:
         print("Choose the preference logic to use:")

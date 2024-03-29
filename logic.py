@@ -38,48 +38,46 @@ def performEncoding(encodedObjects, attributes):
 
 
 
-def isFeasible(encodedObject, constraints, attributes):
-    """
-    Check if an encoded object satisfies all the given CNF constraints.
+def isFeasible(encodedObject, attributes, constraints):
+    print("Inside isFeasible, attributes is a:", type(attributes))
+    # Maps attribute names to their indexes based on the ordering in attributes
+    attribIndex = {attrib: i for i, attrib in enumerate(attributes.keys())}
 
-    :param encodedObject: A string representing an object's encoded binary attributes.
-    :param constraints: A list of lists, where each sub-list represents a disjunction of literals (attribute-value pairs) that form a clause.
-    :param attributes: Dictionary of attributes and their possible values to map encoded positions back to attribute values.
-    :return: Boolean indicating if the object is feasible (True) or not (False).
-    """
-    for clause in constraints:
+    for constraint in constraints:
         clauseSatisfied = False
-        for literal in clause:
-            negated = 'NOT ' in literal
-            attributeValue = literal.replace('NOT ', '')
-            
-            # Find which attribute this literal refers to, and its index (0 or 1)
+        for literal in constraint:
+            isNegated = 'NOT ' in literal
+            # Extract attribute name and value from the literal
+            attributeValue = literal.replace('NOT ', '').strip()
             for attribute, values in attributes.items():
                 if attributeValue in values:
-                    attributeIndex = list(attributes).index(attribute)
-                    valueIndex = values.index(attributeValue)
-                    encodedValue = int(encodedObject[attributeIndex])
-                    
-                    # Check if the literal is satisfied
-                    if (negated and encodedValue != valueIndex) or (not negated and encodedValue == valueIndex):
+                    # Determine the index of the attribute in the encoded object
+                    index = attribIndex[attribute]
+                    # Determine the expected bit value based on whether the literal is negated
+                    expectedBit = '0' if isNegated else '1'
+                    # Determine the bit value in the encoded object
+                    actualBit = encodedObject[index]
+                    if actualBit == expectedBit:
                         clauseSatisfied = True
-                        break  # A single satisfied literal is enough for the clause
+                        break  # A single true literal is enough for the clause to be satisfied
+            if clauseSatisfied:
+                break  # Move to the next clause if the current one is satisfied
 
         if not clauseSatisfied:
-            return False  # If any clause is not satisfied, the object is not feasible
+            # If after checking all literals in a clause, none are satisfied, the object is infeasible
+            return False
 
-    return True  # All clauses satisfied
+    # The object is feasible if all clauses are either satisfied or at least one literal per clause is satisfied
+    return True
 
-def checkFeasibility(encodedObjects, constraints, attributes):
-    """
-    Filters the encoded objects based on their feasibility against given constraints.
 
-    :param encodedObjects: List of strings, each representing an object's encoded attributes.
-    :param constraints: A list of lists representing the CNF constraints.
-    :param attributes: Dictionary of attributes and their possible values for decoding.
-    :return: List of feasible encoded objects.
-    """
-    return [obj for obj in encodedObjects if isFeasible(obj, constraints, attributes)]
+def checkFeasibility(encodedObjects, attributes, constraints):
+    # Assuming constraints are properly formatted
+    print("Correcting call to isFeasible with actual attributes:", attributes)
+    feasibleObjects = [obj for obj in encodedObjects if isFeasible(obj, attributes, constraints)]
+    return feasibleObjects
+
+
 
 def evaluateCondition(encodedObject, clause, attributes):
     # Evaluate a single condition against the encoded object
