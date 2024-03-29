@@ -16,19 +16,18 @@ def encodeCombinations(combinations, attributes):
     ]
 
 def encodeCombinations(combinations, attributes):
+    # Assuming attributes are sorted as desired and combinations are generated accordingly
     encodedObjects = []
     for combination in combinations:
-        encodedObject = ''
-        for value, (attribute, values) in zip(combination, attributes.items()):
-            # Assign '1' for the first listed value and '0' for the second listed value
-            bit = '1' if values.index(value) == 0 else '0'
-            encodedObject += bit
-        encodedObjects.append(encodedObject)
+        encoded = ''.join('0' if val == attributes[attr][1] else '1' for attr, val in zip(attributes.keys(), combination))
+        encodedObjects.append(encoded)
+    # The encodedObjects list should now start with '000' and increment to '111'
     return encodedObjects
+
 
 def performEncoding(encodedObjects, attributes):
     print("Encoded Objects:")
-    for idx, obj in enumerate(reversed(encodedObjects)):
+    for idx, obj in enumerate(encodedObjects):
         decoded_attributes = []
         for bit, (attribute, values) in zip(obj, attributes.items()):
             # Decode each bit to its corresponding attribute value
@@ -75,12 +74,16 @@ def isFeasible(encodedObject, attributes, constraints):
     # The object is feasible if it does not violate any of the constraints
     return True
 
-
 def checkFeasibility(encodedObjects, attributes, constraints):
-    # Assuming constraints are properly formatted
-    print("Correcting call to isFeasible with actual attributes:", attributes)
-    feasibleObjects = [obj for obj in encodedObjects if isFeasible(obj, attributes, constraints)]
-    return feasibleObjects
+    encodedObjects.reverse()
+    # Generate feasibility results while preserving original order and identifiers
+    feasibilityResults = [(f"o{index}", obj, isFeasible(obj, attributes, constraints)) for index, obj in enumerate(encodedObjects)]
+    return feasibilityResults
+
+
+
+
+
 
 
 
@@ -89,24 +92,21 @@ def evaluateCondition(encodedObject, clause, attributes):
     # This function needs to be implemented based on your specific logic
     return True  # Placeholder return value
 
-def showTable(feasibleObjects, penaltyLogicRules, attributes):
+def showTable(feasibilityResults, penaltyLogicRules, attributes):
     print("+----------+---------------+--------------+---------------+")
     print("| encoding | fish AND wine | wine OR cake | total penalty |")
     print("+----------+---------------+--------------+---------------+")
 
-    for idx, obj in enumerate(feasibleObjects):
-        penalties_for_rules = []
-        total_penalty = 0
-        for condition, penalty in penaltyLogicRules:
-            # This assumes you have a function to evaluate a penalty rule's condition against an object
-            if evaluatePenaltyCondition(obj, condition, attributes):
-                total_penalty += penalty
-                penalties_for_rules.append(penalty)
-            else:
-                penalties_for_rules.append(0)
-        penalties_display = ' | '.join(str(p) for p in penalties_for_rules)
-        print(f"| o{idx:<8}| {penalties_display} | {total_penalty:<13}|")
+    for index, obj, is_obj_feasible in enumerate(feasibilityResults):
+        if is_obj_feasible:
+            # Calculate penalties and display the row for feasible objects
+            penalties_for_rules = [evaluateCondition(obj, condition, attributes) * penalty
+                                   for condition, penalty in penaltyLogicRules]
+            total_penalty = sum(penalties_for_rules)
+            penalties_display = ' | '.join(str(p) for p in penalties_for_rules)
+            print(f"| o{index:<8}| {penalties_display} | {total_penalty:<13}|")
     print("+----------+---------------+--------------+---------------+")
+
 
 def evaluatePenaltyCondition(encodedObject, condition, attributes):
     # Evaluate a penalty condition against the encoded object

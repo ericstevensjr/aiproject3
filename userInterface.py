@@ -21,8 +21,8 @@ def reasoningTasksMenu(attributes, encodedObjects, feasibleObjects, constraints,
             for feasibleObject in feasibleObjects:
                 print("Object: ", feasibleObject)
             if feasibleObjects:
-                print(f"There are {len(feasibleObjects)} feasible objects.")
-                # Optionally, list the feasible objects or perform further actions with them
+                feasibleObjectsCount = sum(1 for _, _, is_obj_feasible in feasibleObjects if is_obj_feasible)
+                print(f"There are {feasibleObjectsCount} feasible objects.")
             else:
                 print("No feasible objects found.")
         elif task_choice == '3':
