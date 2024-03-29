@@ -1,107 +1,63 @@
-def parseAttributesFile(filepath):
+def parseAttributesFile(filename):
+    """
+    Parses the attributes file.
+    The file format is expected to have one attribute per line,
+    with the attribute name followed by its two possible values, separated by commas.
+    """
     attributes = {}
-
-    try:
-        with open(filepath, 'r') as file:
-            for lineNumber, line in enumerate(file, start=1):
-                line = line.strip()
-                if not line:
-                    continue
-                parts = line.split(":")
-                if len(parts) != 2:
-                    print(f"Warning: Line {lineNumber} is malformed, skipping: {line}")
-                    continue
-                attribute, valuesString = parts
-                values = [value.strip() for value in valuesString.split(',') if value.strip()]
-                if len(values) != 2:
-                    print(f"Warning: Attribute '{attribute}' does not have exactly two values, skipping: {line}")
-                    continue
-                attributes[attribute.strip()] = values
-    
-    except FileNotFoundError:
-        print(f"Error: File {filepath} not found.")
-        return {}
-    
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        return {}
-    
+    with open(filename, 'r') as file:
+        for line in file:
+            parts = line.strip().split(':')
+            if len(parts) == 2:
+                attr_name, values = parts
+                attributes[attr_name.strip()] = [value.strip() for value in values.split(',')]
     return attributes
 
-
-def parseConstraintFile(filepath):
+def parseConstraintFile(filename):
+    """
+    Parses the constraints file.
+    The file format expects each constraint as a CNF clause on a separate line.
+    """
     constraints = []
-
-    try:
-        with open(filepath, 'r') as file:
-            for line in file:
-                line = line.strip()
-                if not line:
-                    continue
-                # Splitting each line on 'OR' to extract individual literals
-                literals = [literal.strip() for literal in line.split('OR')]
-                constraints.append(literals)
-
-    except FileNotFoundError:
-        print(f"Error: File {filepath} not found.")
-        return []
-    
-    except Exception as e:
-        print(f"An unexpected error occurred while parsing constraints: {e}")
-        return []
-    
+    with open(filename, 'r') as file:
+        for line in file:
+            # Assuming each line is a single constraint consisting of literals separated by ' OR '
+            # and optionally prefixed with 'NOT ' for negation.
+            constraint = [literal.strip() for literal in line.strip().split('OR')]
+            constraints.append(constraint)
     return constraints
 
-
-def parsePenaltyLogicFile(filepath):
+def parsePenaltyLogicFile(filename):
+    """
+    Parses the penalty logic file.
+    Each row describes one penalty logic rule which is a comma-separated pair:
+    a CNF propositional formula and a penalty value.
+    """
     penaltyLogicRules = []
-
-    try:
-        with open(filepath, 'r') as file:
-            for line in file:
-                line = line.strip()
-                if not line:
-                    continue
-                
-                try:
-                    condition, penalty = line.split(',')
-                    penalty = int(penalty.strip())
-                    penaltyLogicRules.append((condition.strip(), penalty))
-                
-                except ValueError:
-                    print(f"Warning: Skipping malformed penalty logic rule: {line}")
-
-    except FileNotFoundError:
-        print(f"Error: File {filepath} not found.")
-        return []
-    
-    except Exception as e:
-        print(f"An unexpected error occurred while parsing penalty logic rules: {e}")
-        return []
-    
+    with open(filename, 'r') as file:
+        for line in file:
+            parts = line.strip().split(',')
+            if len(parts) == 2:
+                cnfFormula, penalty = parts[0].strip(), int(parts[1].strip())
+                penaltyLogicRules.append((cnfFormula, penalty))
     return penaltyLogicRules
 
-
-def parseQualitativeLogicFile(filepath):
+def parseQualitativeLogicFile(filename):
+    """
+    Parses the qualitative choice logic file.
+    Each row describes one qualitative choice logic rule in the format "φ1 BT ... φn IF ψ".
+    """
     qualitativeLogicRules = []
-
-    try:
-        with open(filepath, 'r') as file:
-            for line in file:
-                line = line.strip()
-                if not line:
-                    continue
-                parts = line.split('IF')
-                condition = parts[1].strip() if len(parts) > 1 else ""
-                preferences = parts[0].strip()
+    with open(filename, 'r') as file:
+        for line in file:
+            parts = line.strip().split('IF')
+            if len(parts) == 2:
+                preferences, condition = parts[0].strip(), parts[1].strip()
+                # Splitting preferences on 'BT' to handle multiple preferences if needed
+                preferences = [pref.strip() for pref in preferences.split('BT')]
                 qualitativeLogicRules.append((preferences, condition))
-    
-    except FileNotFoundError:
-        print(f"Error: File {filepath} not found.")
-        return []
-    
-    except Exception as e:
-        print(f"An unexpected error occurred while parsing qualitative choice logic rules: {e}")
-        return []
-    
+            elif len(parts) == 1:
+                # Handle cases with no conditions
+                preferences = [pref.strip() for pref in parts[0].split('BT')]
+                qualitativeLogicRules.append((preferences, ''))
     return qualitativeLogicRules
