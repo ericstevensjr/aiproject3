@@ -29,7 +29,7 @@ def reasoningTasksMenu(attributes, encodedObjects, feasibleObjects, constraints,
             else:
                 print("No penalty logic rules provided.")
         elif task_choice == '4':
-            print("Exemplification not implemented.")  # Placeholder for actual functionality
+            exemplification(feasibleObjects, penaltyLogicRules, attributes)
         elif task_choice == '5':
             print("Omni-optimization not implemented.")  # Placeholder for actual functionality
         elif task_choice == '6':

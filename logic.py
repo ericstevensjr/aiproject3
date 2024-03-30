@@ -1,4 +1,4 @@
-import itertools
+import itertools, random
 
 def generateCombinations(attributes):
     attributeValues = [values for values in attributes.values()]
@@ -186,3 +186,25 @@ def evaluatePenaltyCondition(encodedObjects, condition, attributes, map):
 
     # If all clauses are satisfied, return the associated penalty
     return condition[1]  # Assuming the condition is a tuple (condition_str, penalty)
+
+def exemplification(feasibleObjects, penaltyLogicRules, attributes):
+    # Filter to include only feasible objects (assuming this structure from prior steps)
+    feasibleObjectsFiltered = [obj for obj in feasibleObjects if obj[2]]  # obj[2] is the feasibility flag
+
+    # Randomly select two feasible objects
+    objA, objB = random.sample(feasibleObjectsFiltered, 2)
+
+    # Calculate penalties for each object
+    penaltiesA = applyPenalties([objA], penaltyLogicRules, attributes)[0]  # [0] to get the first tuple from the result
+    penaltiesB = applyPenalties([objB], penaltyLogicRules, attributes)[0]
+
+    # Compare based on total penalty
+    if penaltiesA[2] < penaltiesB[2]:  # [2] to access the total penalty
+        print(f"Two randomly selected feasible objects are {penaltiesA[0]} and {penaltiesB[0]},")
+        print(f"and {penaltiesA[0]} is strictly preferred over {penaltiesB[0]}.")
+    elif penaltiesA[2] > penaltiesB[2]:
+        print(f"Two randomly selected feasible objects are {penaltiesA[0]} and {penaltiesB[0]},")
+        print(f"and {penaltiesB[0]} is strictly preferred over {penaltiesA[0]}.")
+    else:  # Equal penalties
+        print(f"Two randomly selected feasible objects are {penaltiesA[0]} and {penaltiesB[0]},")
+        print("and they are equivalent.")
