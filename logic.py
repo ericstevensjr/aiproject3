@@ -5,25 +5,12 @@ def generateCombinations(attributes):
     return list(itertools.product(*attributeValues))
 
 def encodeCombinations(combinations, attributes):
-    valuePositions = {
-        attribute: {value: idx for idx, value in enumerate(values)}
-        for attribute, values in attributes.items()
-    }
-    return [
-        ''.join('1' if valuePositions[attribute][value] == 0 else '0'
-                for attribute, value in zip(attributes.keys(), combination))
-        for combination in combinations
-    ]
-
-def encodeCombinations(combinations, attributes):
     # Assuming attributes are sorted as desired and combinations are generated accordingly
     encodedObjects = []
     for combination in combinations:
         encoded = ''.join('0' if val == attributes[attr][1] else '1' for attr, val in zip(attributes.keys(), combination))
         encodedObjects.append(encoded)
-    # The encodedObjects list should now start with '000' and increment to '111'
     return encodedObjects
-
 
 def performEncoding(encodedObjects, attributes):
     print("Encoded Objects:")
@@ -33,7 +20,7 @@ def performEncoding(encodedObjects, attributes):
             # Decode each bit to its corresponding attribute value
             value = values[0] if bit == '1' else values[1]
             decoded_attributes.append(value)
-        print(f"o{idx} – {obj}: " + ', '.join(decoded_attributes))
+        print(f"o{idx}: " + ', '.join(decoded_attributes))
 
 
 
@@ -81,33 +68,101 @@ def checkFeasibility(encodedObjects, attributes, constraints):
     return feasibilityResults
 
 
-
-
-
-
-
-
 def evaluateCondition(encodedObject, clause, attributes):
     # Evaluate a single condition against the encoded object
     # This function needs to be implemented based on your specific logic
     return True  # Placeholder return value
 
-def showTable(feasibilityResults, attributes):
+def evaluateCNF(encodedObj, cnfExpression, attributes):
+    """
+    Evaluates a CNF expression against an encoded object.
+    
+    encodedObj: Binary string representing the object.
+    cnfExpression: CNF expression string.
+    attributes: Ordered dict of attributes and their binary encoding positions.
+    """
+    # Mapping attribute names to their positions and binary values
+    attr_positions = {attr: i for i, attr in enumerate(attributes)}
+    
+    # Split CNF into individual clauses
+    clauses = cnfExpression.split(" AND ")
+    for clause in clauses:
+        # Initialize clause evaluation as False
+        clause_eval = False
+        
+        literals = clause.split(" OR ")
+        for literal in literals:
+            negated = "NOT " in literal
+            literal_attr = literal.replace("NOT ", "")
+            
+            # Determine the attribute and its expected binary value for the literal
+            for attr, values in attributes.items():
+                if literal_attr in values:
+                    pos = attr_positions[attr]
+                    expected_val = '0' if values.index(literal_attr) else '1'
+                    if negated:
+                        expected_val = '1' if expected_val == '0' else '0'
+                    
+                    # Check if the literal evaluates to True
+                    if encodedObj[pos] == expected_val:
+                        clause_eval = True
+                        break
+
+        # If any clause is not satisfied, return True to indicate penalty applies
+        if not clause_eval:
+            return True
+    
+    # All clauses are satisfied, return False indicating no penalty
+    return False
+
+def applyPenalties(feasibleObjects, penaltyLogicRules, attributes):
+    penalties_summary = []
+
+    for objId, encodedObj, _ in feasibleObjects:
+        penalties = []
+        for cnfExpression, penalty in penaltyLogicRules:
+            # If the CNF expression is not satisfied, apply the penalty
+            if evaluateCNF(encodedObj, cnfExpression, attributes):
+                penalties.append(penalty)
+            else:
+                penalties.append(0)
+        total_penalty = sum(penalties)
+        penalties_summary.append((objId, penalties, total_penalty))
+    
+    return penalties_summary
+
+def showTable(feasibleObjects, penaltyLogicRules, attributes):
     print("+----------+---------------+--------------+---------------+")
     print("| encoding | fish AND wine | wine OR cake | total penalty |")
     print("+----------+---------------+--------------+---------------+")
+    
+    # Filter out infeasible objects
+    feasibleObjects = [(objId, encodedObj, isFeasible) for objId, encodedObj, isFeasible in feasibleObjects if isFeasible]
 
-    for idx, (objId, encodedObj, isFeasible) in enumerate(feasibilityResults):
-        if isFeasible:
-            # Assuming attributes are already correctly ordered and indexed
-            decoded_attributes = [attributes[attr][int(bit)] for attr, bit in zip(attributes.keys(), encodedObj)]
-            # Construct the row for the table; you'll need to adjust this part based on how you calculate penalties
-            penalties_for_rules = ['0' for _ in range(2)]  # Placeholder for actual penalty values
-            total_penalty = '0'  # Placeholder for the total penalty calculation
-            row = f"| {objId.ljust(10)}| {' | '.join(penalties_for_rules).ljust(14)}| {total_penalty.ljust(13)}|"
-            print(row)
-
+    penalties_summary = applyPenalties(feasibleObjects, penaltyLogicRules, attributes)
+    for objId, penalties, total_penalty in penalties_summary:
+        penalties_str = " | ".join(str(p).ljust(14) for p in penalties)
+        print(f"| {objId.ljust(10)}| {penalties_str}| {str(total_penalty).ljust(13)}|")
     print("+----------+---------------+--------------+---------------+")
+
+def evaluateCNF(encodedObj, cnfExpression, attributes):
+    attrToIndex = {attr: idx for idx, attr in enumerate(attributes)}
+    for clause in cnfExpression.split(" AND "):
+        clauseSatisfied = False
+        for literal in clause.split(" OR "):
+            negated = literal.startswith("NOT ")
+            literalAttr = literal.replace("NOT ", "")
+            for attr, values in attributes.items():
+                if literalAttr in values:
+                    idx = attrToIndex[attr]
+                    expectedValue = '0' if negated else '1'
+                    if encodedObj[idx] == expectedValue:
+                        clauseSatisfied = True
+                        break
+        if not clauseSatisfied:
+            return True  # Clause not satisfied, so penalty applies
+    return False  # All clauses satisfied, so no penalty
+
 
 
 def evaluatePenaltyCondition(encodedObjects, condition, attributes, map):

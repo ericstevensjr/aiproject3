@@ -10,7 +10,7 @@ def reasoningTasksMenu(attributes, encodedObjects, feasibleObjects, constraints,
         print("4. Exemplification")
         print("5. Omni-optimization")
         print("6. Back to previous menu")
-        task_choice = input("Your Choice: ")
+        task_choice = input("\nYour Choice: ")
 
         if task_choice == '1':
             performEncoding(encodedObjects, attributes)
@@ -18,16 +18,14 @@ def reasoningTasksMenu(attributes, encodedObjects, feasibleObjects, constraints,
             # Assuming constraints are already parsed and available in a suitable format
             # And assuming attributes and encodedObjects are defined and available
             # Inform the user about the result of the feasibility check
-            for feasibleObject in feasibleObjects:
-                print("Object: ", feasibleObject)
             if feasibleObjects:
                 feasibleObjectsCount = sum(1 for _, _, is_obj_feasible in feasibleObjects if is_obj_feasible)
-                print(f"There are {feasibleObjectsCount} feasible objects.")
+                print(f"Yes, there are {feasibleObjectsCount} feasible objects.")
             else:
                 print("No feasible objects found.")
         elif task_choice == '3':
             if penaltyLogicRules:
-                showTable(feasibleObjects, attributes)
+                showTable(feasibleObjects, penaltyLogicRules, attributes)
             else:
                 print("No penalty logic rules provided.")
         elif task_choice == '4':
@@ -43,26 +41,23 @@ def userInterface():
     print("Welcome to PrefAgent!\n")
 
     attributesFile = input("Enter Attributes File Name: ")
-    constraintsFile = input("Enter Hard Constraints File Name: ")
+    constraintsFile = input("\nEnter Hard Constraints File Name: ")
     attributes = parseAttributesFile(attributesFile)
     constraints = parseConstraintFile(constraintsFile)
     encodedObjects = encodeCombinations(generateCombinations(attributes), attributes)
-    # Assuming there's logic here to apply constraints and find feasibleObjects
-    print("Attributes structure before calling isFeasible:", attributes)
-
     feasibleObjects = checkFeasibility(encodedObjects, attributes, constraints)
 
     while True:
-        print("Choose the preference logic to use:")
+        print("\nChoose the preference logic to use:")
         print("1. Penalty Logic")
         print("2. Qualitative Choice Logic")
         print("3. Exit")
-        preferenceChoice = input("Your Choice: ")
+        preferenceChoice = input("\nYour Choice: ")
 
         if preferenceChoice == '1':
+            print("\nYou picked Penalty Logic")
             preferencesFile = input("Enter Preferences File Name: ")
             penaltyLogicRules = parsePenaltyLogicFile(preferencesFile)
-            print("\nYou picked Penalty Logic")
             reasoningTasksMenu(attributes, encodedObjects, feasibleObjects, constraints, penaltyLogicRules=penaltyLogicRules)
         elif preferenceChoice == '2':
             preferencesFile = input("Enter Preferences File Name: ")
