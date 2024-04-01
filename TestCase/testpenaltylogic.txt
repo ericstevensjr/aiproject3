@@ -1,0 +1,3 @@
+mountain AND snowboarding, 10
+beach AND surfing, 8
+luxury AND plane, 5

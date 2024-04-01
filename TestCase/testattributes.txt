@@ -1,0 +1,8 @@
+location: mountain, beach
+accommodation: hotel, airBNB
+activity: snowboarding, surfing
+duration: week, weekend
+transport: plane, car
+mealPlan: allInclusive, cooking
+priceRange: budget, luxury
+season: winter, summer

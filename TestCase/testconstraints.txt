@@ -1,0 +1,6 @@
+NOT mountain OR NOT surfing
+NOT beach OR NOT snowboarding
+NOT budget OR NOT luxury
+NOT car OR NOT luxury
+NOT hotel OR NOT cooking
+NOT airBNB OR allInclusive
